@@ -10,6 +10,7 @@ import CadastrarLugares from '../Screens/CadastrarLugares';
 import Visualizar from '../Screens/Visualizar';
 import Detalhes from '../Screens/Detalhes';
 import Mapa from '../Screens/Mapa';
+import LoginScreen from '../Screens/LoginScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -81,6 +82,7 @@ export default function Routes() {
     return (
         <Stack.Navigator>
             <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+            <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Inicio" component={BottomTabs} options={{ headerShown: false }} />
             <Stack.Screen name="Detalhes" component={Detalhes}
                 options={{
