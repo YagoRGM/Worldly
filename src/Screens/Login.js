@@ -1,12 +1,5 @@
 import React from "react";
-import {
-    StyleSheet,
-    Text,
-    View,
-    Image,
-    TouchableOpacity,
-    TextInput
-} from "react-native";
+import { StyleSheet, Text, View, Image, TouchableOpacity, TextInput } from "react-native";
 import * as Animatable from "react-native-animatable";
 import { useNavigation } from "@react-navigation/native";
 
@@ -33,7 +26,7 @@ export default function Inicio() {
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => navigation.navigate('LoginScreen')}
+                    onPress={() => navigation.navigate('Inicio')}
                 >
                     <Text style={styles.buttonText}>Acessar</Text>
                 </TouchableOpacity>

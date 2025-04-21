@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo-google-fonts/poppins": "^0.3.0",
     "@expo/metro-runtime": "~4.0.1",
     "@react-google-maps/api": "^2.20.6",
     "@react-navigation/bottom-tabs": "^7.3.9",
@@ -25,6 +26,7 @@
     "react-dom": "18.3.1",
     "react-native": "0.76.9",
     "react-native-animatable": "^1.4.0",
+    "react-native-awesome-alerts": "^2.0.0",
     "react-native-flash-message": "^0.4.2",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-maps": "^1.20.1",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { GoogleMap, LoadScript, Marker, Circle } from '@react-google-maps/api';
 import { GOOGLE_MAPS_API_KEY } from '../Config/MapsConfig';
@@ -6,6 +6,7 @@ import { db } from '../Config/FireBaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
 import * as Location from 'expo-location';
 import { Modalize } from 'react-native-modalize';
+import { useRoute } from '@react-navigation/native';
 
 const containerStyle = {
   width: '100%',
@@ -40,6 +41,7 @@ export default function Mapa({ navigation, route }) {
   const [marcadorSelecionado, setMarcadorSelecionado] = useState(null);
   const modalRef = useRef(null);
   const [localizacaoAtual, setLocalizacaoAtual] = useState(null);
+  const [localizacaoAtual_marcador, setLocalizacaoAtual_marcador] = useState(null);
 
   const buscarMarcadores = async () => {
     try {
@@ -92,17 +94,25 @@ export default function Mapa({ navigation, route }) {
     })();
   }, []);
 
+  useEffect(() => {
+    if (route.params?.latitude && route.params?.longitude) {
+      setLocalizacaoAtual_marcador({
+        lat: route.params.latitude,
+        lng: route.params.longitude,
+      });
+    }
+  }, [route.params]);
 
   return (
     <View style={{ flex: 1 }}>
       <LoadScript googleMapsApiKey={GOOGLE_MAPS_API_KEY}>
         <GoogleMap
           mapContainerStyle={containerStyle}
-          center={localizacaoAtual}
+          center={localizacaoAtual_marcador || localizacaoAtual}
           zoom={17}
           options={mapOptions}
-
         >
+
           {marcadores.map((marcador, index) => (
             <Marker
               key={index}
@@ -246,6 +256,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  },  
+  },
 
 });
