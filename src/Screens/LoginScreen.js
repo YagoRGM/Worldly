@@ -1,16 +1,9 @@
 import React, { useState } from "react";
 import * as Animatable from "react-native-animatable";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  Image,
-} from "react-native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image } from "react-native";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "../Config/FireBaseConfig";
+import { auth, db } from "../Config/FireBaseConfig"; // Importando o Firestore
+import { doc, setDoc } from "firebase/firestore"; // Funções do Firestore
 
 export default function LoginScreen() {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -31,24 +24,36 @@ export default function LoginScreen() {
     }
 
     try {
+      // Criando o usuário no Firebase Authentication
+      console.log("Criando usuário com email:", email);
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
       const user = userCredential.user;
 
-      // Atualizar perfil no Authentication
+      // Atualizando o perfil do usuário
       await updateProfile(user, {
         displayName: nome,
-        photoURL: "https://i.imgur.com/5RHR6Ku.png", // imagem padrão
+        photoURL: "https://i.imgur.com/5RHR6Ku.png",
+      });
+
+      // Adicionando o usuário no Firestore na coleção "users"
+      console.log("Adicionando o usuário no Firestore");
+      await setDoc(doc(db, "users", user.uid), {
+        nome: nome,
+        email: email,
+        photoURL: user.photoURL, // Foto do usuário (se houver)
+        criadoEm: new Date(),
       });
 
       Alert.alert("Sucesso", "Usuário cadastrado com sucesso!");
 
-      // Limpar campos
+      // Resetando os campos e estado de registro
       setIsRegistering(false);
       setEmail("");
       setSenha("");
       setConfirmarSenha("");
       setNome("");
     } catch (error) {
+      console.error("Erro ao criar o usuário:", error.message);
       Alert.alert("Erro", error.message);
     }
   };
@@ -114,20 +119,24 @@ export default function LoginScreen() {
           </>
         )}
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={isRegistering ? handleCadastro : handleLogin}
-        >
-          <Text style={styles.buttonText}>
-            {isRegistering ? "Cadastrar" : "Acessar"}
-          </Text>
-        </TouchableOpacity>
+        <Animatable.View animation="slideInUp" duration={800}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={isRegistering ? handleCadastro : handleLogin}
+          >
+            <Text style={styles.buttonText}>
+              {isRegistering ? "Cadastrar" : "Acessar"}
+            </Text>
+          </TouchableOpacity>
+        </Animatable.View>
 
-        <TouchableOpacity onPress={() => setIsRegistering(!isRegistering)}>
-          <Text style={styles.registerToggle}>
-            {isRegistering ? "Voltar para o login" : "Criar uma conta"}
-          </Text>
-        </TouchableOpacity>
+        <Animatable.View animation="slideInUp" delay={300} duration={800}>
+          <TouchableOpacity onPress={() => setIsRegistering(!isRegistering)}>
+            <Text style={styles.registerToggle}>
+              {isRegistering ? "Voltar para o login" : "Criar uma conta"}
+            </Text>
+          </TouchableOpacity>
+        </Animatable.View>
       </Animatable.View>
     </View>
   );

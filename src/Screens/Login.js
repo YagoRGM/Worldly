@@ -26,7 +26,7 @@ export default function Inicio() {
 
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => navigation.navigate('Inicio')}
+                    onPress={() => navigation.navigate('LoginScreen')}
                 >
                     <Text style={styles.buttonText}>Acessar</Text>
                 </TouchableOpacity>
