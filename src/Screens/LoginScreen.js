@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import * as Animatable from "react-native-animatable";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image } from "react-native";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth, db } from "../Config/FireBaseConfig"; // Importando o Firestore
-import { doc, setDoc } from "firebase/firestore"; // Funções do Firestore
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth, db } from "../Config/FireBaseConfig";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }) {
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -14,52 +14,78 @@ export default function LoginScreen() {
 
   const handleCadastro = async () => {
     if (!email || !senha || !confirmarSenha || !nome) {
-      Alert.alert("Erro", "Preencha todos os campos.");
+      alert("Erro, preencha todos os campos.");
       return;
     }
 
     if (senha !== confirmarSenha) {
-      Alert.alert("Erro", "As senhas não coincidem.");
+      alert("Erro, as senhas não coincidem.");
       return;
     }
 
     try {
-      // Criando o usuário no Firebase Authentication
-      console.log("Criando usuário com email:", email);
+      // Criar usuário no Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
       const user = userCredential.user;
 
-      // Atualizando o perfil do usuário
+      // Atualizar perfil do Firebase Auth
       await updateProfile(user, {
         displayName: nome,
-        photoURL: "https://i.imgur.com/5RHR6Ku.png",
+
       });
 
-      // Adicionando o usuário no Firestore na coleção "users"
-      console.log("Adicionando o usuário no Firestore");
+      // Salvar usuário no Firestore
       await setDoc(doc(db, "users", user.uid), {
         nome: nome,
         email: email,
-        photoURL: user.photoURL, // Foto do usuário (se houver)
-        criadoEm: new Date(),
+        photoURL: "",
+        uid: user.uid,
       });
 
       Alert.alert("Sucesso", "Usuário cadastrado com sucesso!");
 
-      // Resetando os campos e estado de registro
+      // Resetar campos
       setIsRegistering(false);
       setEmail("");
       setSenha("");
       setConfirmarSenha("");
       setNome("");
+
     } catch (error) {
       console.error("Erro ao criar o usuário:", error.message);
-      Alert.alert("Erro", error.message);
+      alert("Erro", error.message);
     }
   };
 
-  const handleLogin = () => {
-    console.log("Logando com:", email, senha);
+  const handleLogin = async () => {
+    if (!email || !senha) {
+      alert("Erro, preencha todos os campos.");
+      return;
+    }
+
+    try {
+      // Fazer login
+      const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+      const user = userCredential.user;
+
+      // Buscar informações no Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        console.log("Usuário logado:", userData);
+      } else {
+        console.log("Usuário logado mas não encontrado no Firestore.");
+      }
+
+      alert(`Bem-vindo, Olá, ${user.displayName || "usuário"}!`);
+
+      // Redirecionar para a tela inicial
+      navigation.navigate("Inicio");
+
+    } catch (error) {
+      console.error("Erro no login:", error.message);
+      alert("Erro", error.message);
+    }
   };
 
   return (
@@ -187,18 +213,17 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     paddingVertical: 10,
     marginTop: 20,
-    alignItems: "center",
-    justifyContent: "center",
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 18,
+    textAlign: "center",
     fontWeight: "bold",
   },
   registerToggle: {
-    marginTop: 20,
     color: "#1e90ff",
+    marginTop: 20,
     textAlign: "center",
-    fontWeight: "bold",
+    textDecorationLine: "underline",
   },
 });
