@@ -162,11 +162,13 @@ export default function Mapa({ navigation, route }) {
             </>
           )}
 
+          <TouchableOpacity style={styles.botaoCadastrar} onPress={() => navigation.navigate('CadastrarLugares')}>
+            <Text style={styles.simboloMais}>+</Text>
+            <Text style={styles.textoBotaoCadastrar}> Cadastrar Lugar</Text>
+          </TouchableOpacity>
+
         </GoogleMap>
       </LoadScript>
-      <TouchableOpacity style={styles.botaoCadastrar} onPress={() => navigation.navigate('CadastrarLugares')}>
-        <Text style={styles.textoBotaoCadastrar}>+ Cadastrar Lugar</Text>
-      </TouchableOpacity>
 
 
       {/* Bottom Modal */}
@@ -203,27 +205,34 @@ export default function Mapa({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  modalContent: {
-    padding: 20,
-  },
   titulo: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
   },
   botaoCadastrar: {
+    position: 'absolute',
+    bottom: 20,
+    left: 32,
+    right: 32,
     backgroundColor: '#4285F4',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginHorizontal: 13,
-    marginBottom: 14,
+    paddingVertical: 8,
     borderRadius: 10,
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
+  },
+  simboloMais: {
+    color: '#fff',
+    fontSize: 24,
+    bottom: 2,
+    fontWeight: 'bold',
   },
   textoBotaoCadastrar: {
     color: '#fff',
@@ -257,5 +266,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-
 });
