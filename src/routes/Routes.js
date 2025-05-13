@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import Inicio from '../Screens/Inicio';
 import Perfil from '../Screens/Perfil';
+import EditarPerfil from '../Screens/EditarPerfil';
 import Login from '../Screens/Login';
 import CadastrarLugares from '../Screens/CadastrarLugares';
 import Visualizar from '../Screens/Visualizar';
@@ -82,6 +83,7 @@ export default function Routes() {
     return (
         <Stack.Navigator>
             <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
+            <Stack.Screen name="EditarPerfil" component={EditarPerfil} options={{ headerShown: false }} />
             <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Inicio" component={BottomTabs} options={{ headerShown: false }} />
             <Stack.Screen name="Detalhes" component={Detalhes}
