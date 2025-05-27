@@ -81,7 +81,7 @@ function BottomTabs() {
 
 export default function Routes() {
     return (
-        <Stack.Navigator>
+        <Stack.Navigator initialRouteName="Login">
             <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
             <Stack.Screen name="EditarPerfil" component={EditarPerfil} options={{ headerShown: false }} />
             <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />

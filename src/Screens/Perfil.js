@@ -1,32 +1,45 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
+import { View, Text, ActivityIndicator, StyleSheet, Pressable, ScrollView, Image } from 'react-native';
+import { supabase } from '../Config/SupaBaseConfig';
 
 export default function Perfil({ navigation }) {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Atualiza dados do usuário toda vez que a tela ganha foco
     useEffect(() => {
-        const auth = getAuth();
-        const db = getFirestore();
-        const user = auth.currentUser;
-
-        if (user) {
-            const userDocRef = doc(db, 'users', user.uid);
-
-            const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    setUserData(docSnap.data());
-                } else {
-                    console.log('Dados do usuário não encontrados.');
-                }
+        const unsubscribe = navigation.addListener('focus', async () => {
+            setLoading(true);
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
+                setUserData(null);
                 setLoading(false);
+                return;
+            }
+            setUserData({
+                nome: user.user_metadata?.nome || '',
+                email: user.email || '',
             });
+            setLoading(false);
+        });
 
-            return () => unsubscribe();
-        }
-    }, []);
+        // Carrega na primeira montagem também
+        (async () => {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (error || !user) {
+                setUserData(null);
+                setLoading(false);
+                return;
+            }
+            setUserData({
+                nome: user.user_metadata?.nome || '',
+                email: user.email || '',
+            });
+            setLoading(false);
+        })();
+
+        return unsubscribe;
+    }, [navigation]);
 
     if (loading) {
         return (
@@ -38,25 +51,27 @@ export default function Perfil({ navigation }) {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Perfil</Text>
-            {userData ? (
-                <>
-                    <View style={styles.infoBox}>
-                        <Text style={styles.label}>Nome:</Text>
-                        <Text style={styles.info}>{userData.nome}</Text>
-                    </View>
-                    <View style={styles.infoBox}>
-                        <Text style={styles.label}>Email:</Text>
-                        <Text style={styles.info}>{userData.email}</Text>
-                    </View>
-                </>
-            ) : (
-                <Text style={styles.info}>Dados do usuário não encontrados.</Text>
-            )}
+            <View style={styles.profileCard}>
+                <Text style={styles.title}>Meu Perfil</Text>
+                {userData ? (
+                    <>
+                        <View style={styles.infoRow}>
+                            <Text style={styles.label}>Nome</Text>
+                            <Text style={styles.info}>{userData.nome}</Text>
+                        </View>
+                        <View style={styles.infoRow}>
+                            <Text style={styles.label}>Email</Text>
+                            <Text style={styles.info}>{userData.email}</Text>
+                        </View>
+                    </>
+                ) : (
+                    <Text style={styles.info}>Dados do usuário não encontrados.</Text>
+                )}
 
-            <Pressable style={styles.button} onPress={() => navigation.navigate('EditarPerfil')}>
-                <Text style={styles.buttonText}>Editar Perfil</Text>
-            </Pressable>
+                <Pressable style={styles.button} onPress={() => navigation.navigate('EditarPerfil')}>
+                    <Text style={styles.buttonText}>Editar Perfil</Text>
+                </Pressable>
+            </View>
         </ScrollView>
     );
 }
@@ -64,59 +79,81 @@ export default function Perfil({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
-        padding: 24,
-        backgroundColor: '#fff',
+        backgroundColor: '#f5f6fa',
         alignItems: 'center',
         justifyContent: 'center',
+        paddingVertical: 40,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#f5f6fa',
+    },
+    profileCard: {
+        width: '100%',
+        maxWidth: 380,
         backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 32,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.10,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    avatar: {
+        width: 110,
+        height: 110,
+        borderRadius: 55,
+        marginBottom: 18,
+        backgroundColor: '#eee',
     },
     title: {
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: 'bold',
-        marginBottom: 30,
-        color: '#333',
+        color: '#FF6B00',
+        marginBottom: 28,
+        marginTop: 4,
+        letterSpacing: 1,
     },
-    infoBox: {
+    infoRow: {
         width: '100%',
-        backgroundColor: '#F5F5F5',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
+        flexDirection: 'column',
+        marginBottom: 18,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+        paddingBottom: 10,
     },
     label: {
-        fontSize: 16,
-        color: '#666',
-        marginBottom: 4,
+        fontSize: 15,
+        color: '#888',
+        marginBottom: 2,
+        fontWeight: '600',
+        letterSpacing: 0.5,
     },
     info: {
-        fontSize: 18,
-        color: '#000',
+        fontSize: 19,
+        color: '#222',
+        fontWeight: '500',
     },
     button: {
-        marginTop: 24,
+        marginTop: 32,
         backgroundColor: '#FF6B00',
         paddingVertical: 14,
-        paddingHorizontal: 30,
+        paddingHorizontal: 40,
         borderRadius: 30,
         shadowColor: '#FF6B00',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
         elevation: 5,
     },
     buttonText: {
         color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 17,
+        fontWeight: 'bold',
+        letterSpacing: 1,
     },
 });
