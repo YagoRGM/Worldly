@@ -5,7 +5,11 @@ import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, } from 'f
 import AwesomeAlert from 'react-native-awesome-alerts';
 import { useFonts, Poppins_400Regular, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { FontAwesome } from '@expo/vector-icons';
+import { supabase } from '../Config/supabaseConfig';
+import { ActivityIndicator } from 'react-native-web';
 
+
+const BUCKET_NAME = 'images-mapa'
 const db = getFirestore(app);
 
 
@@ -17,8 +21,10 @@ export default function Visualizar({ navigation }) {
     const [longitude_lugar, setLongitude_lugar] = useState('');
     const [modalVisible_editar, setModalVisible_editar] = useState(false);
     const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
-    const [deleteid, setDeleteID] = useState(null)
-    const [lugarSelecionado, setLugarSelecionado] = useState(null)
+    const [deleteid, setDeleteID] = useState(null);
+    const [lugarSelecionado, setLugarSelecionado] = useState(null);
+    const [images, setImages] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         carregarLugares();
@@ -27,7 +33,7 @@ export default function Visualizar({ navigation }) {
     const carregarLugares = async () => {
         try {
             const lugaresRef = await getDocs(collection(db, 'pontosTuristicos'))
-            setLugares(lugaresRef.docs.map(doc => {
+            const lugares = lugaresRef.docs.map(doc => {
                 const data = doc.data();
                 return {
                     id: doc.id,
@@ -36,12 +42,59 @@ export default function Visualizar({ navigation }) {
                     latitude: data.latitude,
                     longitude: data.longitude,
                 }
-            }))
+            });
+
+            setLugares(lugares)
+            fetchImages(lugares)
         }
         catch (error) {
             console.error('Erro ao carregar lugares:', error);
         }
     }
+
+
+
+
+    const fetchImages = async (lugares) => {
+        setLoading(true);
+
+        try {
+            const { data, error } = await supabase
+                .storage
+                .from(BUCKET_NAME)
+                .list("", { limit: 100 });
+
+            if (error) throw error;
+
+            const imageFiles = data.filter(file =>
+                file.name.match(/\.(jpg|jpeg|png)$/i)
+            );
+
+            const imageURLs = lugares.map(lugar => {
+                const imagemCorrespondente = imageFiles.find(file =>
+                    file.name.startsWith(lugar.id)
+                );
+                return {
+                    id: lugar.id,
+                    url: imagemCorrespondente
+                        ? supabase.storage.from(BUCKET_NAME).getPublicUrl(imagemCorrespondente.name).data.publicUrl
+                        : null,
+                }
+            });
+
+            setImages(imageURLs)
+        }
+        catch (error) {
+            console.log('Erro ao vizualizar imagens:', error)
+        }
+        finally {
+            setLoading(false)
+        }
+    };
+
+
+
+
 
     const editarLugar = async () => {
         try {
@@ -66,6 +119,10 @@ export default function Visualizar({ navigation }) {
         }
     }
 
+
+
+
+
     const abrirModalEditar = (lugares) => {
         setLugarSelecionado(lugares)
         setModalVisible_editar(true)
@@ -75,10 +132,16 @@ export default function Visualizar({ navigation }) {
         setLongitude_lugar(lugares.longitude)
     }
 
+
+
+
     const confirmarExclusao = (id) => {
         setDeleteAlertVisible(true)
         setDeleteID(id)
     }
+
+
+
 
     const excluirlocalidade = async () => {
         try {
@@ -92,12 +155,31 @@ export default function Visualizar({ navigation }) {
     }
 
     const renderItem = ({ item }) => {
+
+        const imagemDolugar = images.find(img => img.id === item.id)
+
         return (
             <View style={styles.card}>
                 <Text style={styles.title}>{item.nome}</Text>
                 <View style={styles.content}>
                     <View style={styles.row}>
-                        <Image style={styles.lugar_image} source={require('../img/camp_nou.png')} />
+
+                        {loading ? (
+                            <ActivityIndicator size="large" color='#FF6B00' />
+                        ) : (
+                            imagemDolugar && imagemDolugar.url ? (
+                                <View style={styles.imageContainer}>
+                                    <Image
+                                        source={{ uri: imagemDolugar.url }}
+                                        style={styles.image}
+                                        resizeMode='cover'
+                                    />
+                                </View>
+                            ) : (
+                                <Text>Imagem nao encontrada</Text>
+                            )
+                        )}
+
                         <View style={styles.buttons}>
                             <TouchableOpacity style={styles.button_mapa} onPress={() => navigation.navigate('Mapa', { latitude: item.latitude, longitude: item.longitude })}>
                                 <FontAwesome name="map" size={20} color="white" />
@@ -141,7 +223,6 @@ export default function Visualizar({ navigation }) {
 
                 <FlatList
                     data={lugares}
-                    keyExtractor={item => item.id}
                     renderItem={renderItem}
                 />
 
@@ -316,6 +397,31 @@ const styles = StyleSheet.create({
         height: 100,
         borderRadius: 10,
         resizeMode: 'cover',
+    },
+
+    imageList: {
+        paddingBottom: 100,
+    },
+    imageContainer: {
+        marginBottom: 24,
+        borderRadius: 18,
+        backgroundColor: '#FF6B00',
+        padding: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.18,
+        shadowRadius: 12,
+        elevation: 8,
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderColor: '#000',
+        width: '50%'
+    },
+    image: {
+        width: "100%",
+        height: 200,
+        borderRadius: 8,
+        backgroundColor: "#eee",
     },
     buttons: {
         flex: 1,
