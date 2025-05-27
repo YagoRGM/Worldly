@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 import * as Animatable from "react-native-animatable";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image } from "react-native";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth, db } from "../Config/FireBaseConfig";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  Image,
+} from "react-native";
+import { supabase } from "../Config/SupaBaseConfig";
 
 export default function LoginScreen({ navigation }) {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -14,84 +20,88 @@ export default function LoginScreen({ navigation }) {
 
   const handleCadastro = async () => {
     if (!email || !senha || !confirmarSenha || !nome) {
-      alert("Erro, preencha todos os campos.");
+      Alert.alert("Erro", "Preencha todos os campos.");
       return;
     }
 
     if (senha !== confirmarSenha) {
-      alert("Erro, as senhas não coincidem.");
+      Alert.alert("Erro", "As senhas não coincidem.");
       return;
     }
 
     try {
-      // Criar usuário no Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
-      const user = userCredential.user;
-
-      // Atualizar perfil do Firebase Auth
-      await updateProfile(user, {
-        displayName: nome,
-
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: senha,
+        options: {
+          data: { nome },
+        },
       });
 
-      // Salvar usuário no Firestore
-      await setDoc(doc(db, "users", user.uid), {
-        nome: nome,
-        email: email,
-        photoURL: "",
-        uid: user.uid,
-      });
+      if (error) {
+        throw error;
+      }
 
-      Alert.alert("Sucesso", "Usuário cadastrado com sucesso!");
+      Alert.alert(
+        "Sucesso",
+        "Cadastro realizado com sucesso! Verifique seu e-mail para confirmar."
+      );
 
-      // Resetar campos
       setIsRegistering(false);
       setEmail("");
       setSenha("");
       setConfirmarSenha("");
       setNome("");
-
     } catch (error) {
-      console.error("Erro ao criar o usuário:", error.message);
-      alert("Erro", error.message);
+      console.error("Erro ao cadastrar:", error.message);
+      Alert.alert("Erro", error.message);
     }
   };
 
-  const handleLogin = async () => {
-    if (!email || !senha) {
-      alert("Erro, preencha todos os campos.");
+const handleLogin = async () => {
+  if (!email || !senha) {
+    Alert.alert("Erro", "Preencha todos os campos.");
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password: senha,
+    });
+
+    if (error) {
+      if (error.message === "Email not confirmed") {
+        Alert.alert(
+          "Confirme seu e-mail",
+          "Verifique sua caixa de entrada e confirme seu e-mail antes de fazer login."
+        );
+      } else if (error.message === "Invalid login credentials") {
+        Alert.alert("Erro", "E-mail ou senha incorretos.");
+      } else {
+        Alert.alert("Erro no login", error.message);
+      }
       return;
     }
 
-    try {
-      // Fazer login
-      const userCredential = await signInWithEmailAndPassword(auth, email, senha);
-      const user = userCredential.user;
-
-      // Buscar informações no Firestore
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        console.log("Usuário logado:", userData);
-      } else {
-        console.log("Usuário logado mas não encontrado no Firestore.");
-      }
-
-      alert(`Bem-vindo, Olá, ${user.displayName || "usuário"}!`);
-
-      // Redirecionar para a tela inicial
-      navigation.navigate("Inicio");
-
-    } catch (error) {
-      console.error("Erro no login:", error.message);
-      alert("Erro", error.message);
-    }
-  };
+    Alert.alert("Bem-vindo", `Olá, ${data.user.user_metadata.nome || "usuário"}!`);
+    navigation.navigate("Inicio");
+  } catch (error) {
+    console.error("Erro no login:", error.message);
+    Alert.alert("Erro", error.message);
+  }
+};
 
   return (
     <View style={styles.container}>
-      <Animatable.View animation="fadeInLeft" delay={500} style={styles.containerHeader}>
-        <Text style={styles.message}>{isRegistering ? "Cadastro" : "Login"}</Text>
+      <Animatable.View
+        animation="fadeInLeft"
+        delay={500}
+        style={styles.containerHeader}
+      >
+        <Text style={styles.message}>
+          {isRegistering ? "Cadastro" : "Login"}
+        </Text>
       </Animatable.View>
 
       <Animatable.View animation="fadeInUp" style={styles.containerForm}>
