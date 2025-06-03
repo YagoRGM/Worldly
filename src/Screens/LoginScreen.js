@@ -43,8 +43,8 @@ export default function LoginScreen({ navigation }) {
       }
 
       Alert.alert(
-        "Sucesso",
-        "Cadastro realizado com sucesso! Verifique seu e-mail para confirmar."
+        "Usuário cadastrado",
+        "Usuário cadastrado com sucesso! Verifique seu e-mail para confirmar."
       );
 
       setIsRegistering(false);
@@ -58,39 +58,39 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-const handleLogin = async () => {
-  if (!email || !senha) {
-    Alert.alert("Erro", "Preencha todos os campos.");
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password: senha,
-    });
-
-    if (error) {
-      if (error.message === "Email not confirmed") {
-        Alert.alert(
-          "Confirme seu e-mail",
-          "Verifique sua caixa de entrada e confirme seu e-mail antes de fazer login."
-        );
-      } else if (error.message === "Invalid login credentials") {
-        Alert.alert("Erro", "E-mail ou senha incorretos.");
-      } else {
-        Alert.alert("Erro no login", error.message);
-      }
+  const handleLogin = async () => {
+    if (!email || !senha) {
+      Alert.alert("Erro", "Preencha todos os campos.");
       return;
     }
 
-    Alert.alert("Bem-vindo", `Olá, ${data.user.user_metadata.nome || "usuário"}!`);
-    navigation.navigate("Inicio");
-  } catch (error) {
-    console.error("Erro no login:", error.message);
-    Alert.alert("Erro", error.message);
-  }
-};
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: senha,
+      });
+
+      if (error) {
+        if (error.message === "Email not confirmed") {
+          Alert.alert(
+            "Confirme seu e-mail",
+            "Verifique sua caixa de entrada e confirme seu e-mail antes de fazer login."
+          );
+        } else if (error.message === "Invalid login credentials") {
+          Alert.alert("Erro", "E-mail ou senha incorretos.");
+        } else {
+          Alert.alert("Erro no login", error.message);
+        }
+        return;
+      }
+
+      Alert.alert("Usuário logado", "Usuário logado com sucesso!");
+      navigation.navigate("Inicio");
+    } catch (error) {
+      console.error("Erro no login:", error.message);
+      Alert.alert("Erro", error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>

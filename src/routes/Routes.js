@@ -12,6 +12,7 @@ import Visualizar from '../Screens/Visualizar';
 import Detalhes from '../Screens/Detalhes';
 import Mapa from '../Screens/Mapa';
 import LoginScreen from '../Screens/LoginScreen';
+import SplashScreen from '../Screens/SplashScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -81,7 +82,8 @@ function BottomTabs() {
 
 export default function Routes() {
     return (
-        <Stack.Navigator initialRouteName="Login">
+        <Stack.Navigator initialRouteName="SplashScreen">
+            <Stack.Screen name="SplashScreen" component={SplashScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Login" component={Login} options={{ headerShown: false }} />
             <Stack.Screen name="EditarPerfil" component={EditarPerfil} options={{ headerShown: false }} />
             <Stack.Screen name="LoginScreen" component={LoginScreen} options={{ headerShown: false }} />

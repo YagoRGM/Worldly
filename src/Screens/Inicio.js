@@ -11,6 +11,7 @@ import {
   Image,
   FlatList,
   Platform,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../Config/SupaBaseConfig';
@@ -70,6 +71,58 @@ export default function Home({ navigation }) {
       indicatorStyle="white"
       style={Platform.OS === 'android' ? { backgroundColor: '#f8f9fa' } : {}}
     >
+      {/* Frase inspiradora */}
+      <Text style={styles.quote}>
+        "Viajar é trocar a roupa da alma." – Mario Quintana
+      </Text>
+
+      {/* Destaques de funcionalidades */}
+      <View style={styles.featuresRow}>
+        <View style={styles.featureItem}>
+          <Ionicons name="map" size={28} color="#FF6B00" />
+          <Text style={styles.featureText}>Mapa Interativo</Text>
+        </View>
+        <View style={styles.featureItem}>
+          <Ionicons name="camera" size={28} color="#FF6B00" />
+          <Text style={styles.featureText}>Compartilhe Fotos</Text>
+        </View>
+        <View style={styles.featureItem}>
+          <Ionicons name="star" size={28} color="#FF6B00" />
+          <Text style={styles.featureText}>Favoritos</Text>
+        </View>
+        <View style={styles.featureItem}>
+          <Ionicons name="heart" size={28} color="#FF6B00" />
+          <Text style={styles.featureText}>Comunidade</Text>
+        </View>
+      </View>
+
+      {/* Estatísticas rápidas */}
+      <View style={styles.statsRow}>
+        <View style={styles.statBox}>
+          <Ionicons name="earth" size={24} color="#009688" />
+          <Text style={styles.statNumber}>+120</Text>
+          <Text style={styles.statLabel}>Lugares</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Ionicons name="people" size={24} color="#009688" />
+          <Text style={styles.statNumber}>+300</Text>
+          <Text style={styles.statLabel}>Exploradores</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Ionicons name="images" size={24} color="#009688" />
+          <Text style={styles.statNumber}>+800</Text>
+          <Text style={styles.statLabel}>Fotos</Text>
+        </View>
+      </View>
+
+      {/* Dica do dia */}
+      <View style={styles.tipBox}>
+        <Ionicons name="bulb" size={22} color="#FF6B00" style={{ marginRight: 6 }} />
+        <Text style={styles.tipText}>
+          Dica do dia: Explore lugares próximos e descubra tesouros escondidos na sua cidade!
+        </Text>
+      </View>
+
       {/* Descrição moderna no topo */}
       <View style={styles.topDescriptionBox}>
         <Text style={styles.topTitle}>Descubra. Compartilhe. Viva.</Text>
@@ -79,8 +132,13 @@ export default function Home({ navigation }) {
         </Text>
       </View>
 
+      {/* Chamada de ação */}
+      <Text style={styles.ctaText}>
+        Pronto para sua próxima aventura? Explore o mapa ou compartilhe um lugar especial agora mesmo!
+      </Text>
+
       <ImageBackground
-        source={require('../img/logo4.png')}
+        source={require('../assets/img/4.png')}
         style={styles.heroImage}
         imageStyle={{ borderRadius: 20 }}
       >
@@ -156,11 +214,16 @@ export default function Home({ navigation }) {
         </Text>
       </View>
 
+      {/* Botão de acesso rápido */}
+      <Pressable style={styles.quickStartButton} onPress={() => navigation.navigate('Mapa')}>
+        <Text style={styles.quickStartButtonText}>Explorar Agora</Text>
+      </Pressable>
+
       <View style={styles.buttonGroup}>
         <Animated.View style={{ transform: [{ scale: scale1 }] }}>
           <Pressable
             style={styles.button}
-            onPress={() => animateButton(scale1, 0.95, () => navigation.navigate('Mapa'))}
+            onPress={() => animateButton(scale1, 0.95, () => navigation.navigate('Visualizar'))}
           >
             <Ionicons name="location-outline" size={22} color="#fff" />
             <Text style={styles.buttonText}>Locais Próximos</Text>
@@ -188,6 +251,95 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
+  quote: {
+    fontStyle: 'italic',
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 12,
+    fontSize: 15,
+  },
+  featuresRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 16,
+    width: '100%',
+  },
+  featureItem: {
+    alignItems: 'center',
+    width: 90,
+  },
+  featureText: {
+    fontSize: 13,
+    color: '#444',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 18,
+    marginTop: 8,
+  },
+  statBox: {
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    flex: 1,
+    marginHorizontal: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FF6B00',
+    marginTop: 2,
+  },
+  statLabel: {
+    fontSize: 13,
+    color: '#444',
+    marginTop: 1,
+  },
+  tipBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fffbe7',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 16,
+    width: '100%',
+    elevation: 1,
+  },
+  tipText: {
+    color: '#FF6B00',
+    fontSize: 14,
+    fontStyle: 'italic',
+    flex: 1,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF6B00',
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    alignSelf: 'center',
+    marginBottom: 18,
+    marginTop: 2,
+    elevation: 3,
+  },
+  socialButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
+    marginLeft: 8,
+    letterSpacing: 1,
+  },
   topDescriptionBox: {
     width: '100%',
     marginBottom: 18,
@@ -213,6 +365,13 @@ const styles = StyleSheet.create({
     color: '#444',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  ctaText: {
+    fontSize: 16,
+    color: '#FF6B00',
+    textAlign: 'center',
+    marginVertical: 10,
+    fontWeight: 'bold',
   },
   heroImage: {
     width: width - 48,
@@ -307,6 +466,26 @@ const styles = StyleSheet.create({
     color: '#555',
     textAlign: 'center',
     lineHeight: 22,
+  },
+  quickStartButton: {
+    backgroundColor: '#FF6B00',
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    alignSelf: 'center',
+    marginVertical: 16,
+    elevation: 4,
+    shadowColor: '#FF6B00',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  quickStartButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+    letterSpacing: 1,
   },
   buttonGroup: {
     width: '100%',

@@ -5,7 +5,7 @@ import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, } from 'f
 import AwesomeAlert from 'react-native-awesome-alerts';
 import { useFonts, Poppins_400Regular, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { FontAwesome } from '@expo/vector-icons';
-import { supabase } from '../Config/supabaseConfig';
+import { supabase } from '../Config/SupaBaseConfig';
 import { ActivityIndicator } from 'react-native-web';
 
 
