@@ -1,161 +1,196 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView,} from 'react-native';
-import { showMessage } from 'react-native-flash-message';
+import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { db } from '../Config/FireBaseConfig';
 import { collection, addDoc } from 'firebase/firestore';
+import * as ImagePicker from 'expo-image-picker';
+import { FontAwesome } from '@expo/vector-icons';
 
-export default function CadastrarLugares({ navigation }) {
+export default function CadastrarLugares() {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
+  const [imagem, setImagem] = useState('');
 
-  const handleCadastrar = async () => {
-    if (!nome || !latitude || !longitude) {
-      showMessage({
-        message: 'Campos obrigatórios',
-        description: 'Preencha todos os campos obrigatórios.',
-        type: 'warning',
-        icon: 'warning',
-      });      
+  const escolherImagem = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setImagem(result.assets[0].uri);
+    }
+  };
+
+  const cadastrarLugar = async () => {
+    if (!nome || !descricao || !latitude || !longitude) {
+      Alert.alert('Erro', 'Preencha todos os campos.');
       return;
     }
 
-    const novoLugar = {
-      nome,
-      descricao,
-      latitude: parseFloat(latitude),
-      longitude: parseFloat(longitude),
-    };
-
     try {
-      await addDoc(collection(db, 'pontosTuristicos'), novoLugar);
-      showMessage({
-        message: 'Sucesso!',
-        description: 'Lugar cadastrado com sucesso!',
-        type: 'success',
-        icon: 'success',
+      await addDoc(collection(db, 'pontosTuristicos'), {
+        nome,
+        descricao,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        favorito: false,
+        imagem: imagem || '',
       });
-      
-      navigation.navigate('Mapa', { novoLugar });
+      Alert.alert('Sucesso', 'Cidade cadastrada com sucesso!');
+      setNome('');
+      setDescricao('');
+      setLatitude('');
+      setLongitude('');
+      setImagem('');
     } catch (error) {
-      console.error('Erro ao cadastrar lugar:', error);
-      showMessage({
-        message: 'Erro!',
-        description: 'Erro ao cadastrar lugar. Tente novamente.',
-        type: 'danger',
-        icon: 'danger',
-      });      
+      Alert.alert('Erro', 'Erro ao cadastrar cidade.');
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <KeyboardAvoidingView
-        style={styles.container}
-      >
-        <View style={styles.card}>
-          <Text style={styles.title}>📍 Cadastrar Lugar</Text>
-
-          <Text style={styles.label}>Nome*</Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: '#F5F5F5' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <Text style={styles.titulo}>Cadastrar Cidade</Text>
+        <Text style={styles.subtitulo}>Preencha os dados da cidade que merece ser lembrada!</Text>
+        <TextInput
+          placeholder="Nome da Cidade"
+          style={styles.input}
+          value={nome}
+          onChangeText={setNome}
+          placeholderTextColor="#FF6B00"
+        />
+        <TextInput
+          placeholder="Descrição"
+          style={[styles.input, { height: 80 }]}
+          value={descricao}
+          onChangeText={setDescricao}
+          multiline
+          placeholderTextColor="#FF6B00"
+        />
+        <View style={styles.row}>
           <TextInput
-            style={styles.input}
-            placeholder="Digite o nome do lugar"
-            value={nome}
-            onChangeText={setNome}
-          />
-
-          <Text style={styles.label}>Descrição</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Digite uma descrição"
-            value={descricao}
-            onChangeText={setDescricao}
-            multiline
-          />
-
-          <Text style={styles.label}>Latitude</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ex: -23.5505"
+            placeholder="Latitude"
+            style={[styles.input, styles.inputHalf]}
+            keyboardType="numeric"
             value={latitude}
             onChangeText={setLatitude}
-            keyboardType="numeric"
+            placeholderTextColor="#FF6B00"
           />
-
-          <Text style={styles.label}>Longitude</Text>
           <TextInput
-            style={styles.input}
-            placeholder="Ex: -46.6333"
+            placeholder="Longitude"
+            style={[styles.input, styles.inputHalf]}
+            keyboardType="numeric"
             value={longitude}
             onChangeText={setLongitude}
-            keyboardType="numeric"
+            placeholderTextColor="#FF6B00"
           />
-
-          <TouchableOpacity style={styles.button} onPress={handleCadastrar}>
-            <Text style={styles.buttonText}>Cadastrar</Text>
-          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </ScrollView>
+        <TouchableOpacity style={[styles.input, styles.imagemPicker]} onPress={escolherImagem}>
+          <FontAwesome name="image" size={20} color="#FF6B00" />
+          <Text style={{ marginLeft: 10, color: '#FF6B00', fontFamily: 'Poppins-Regular' }}>
+            {imagem ? 'Trocar Imagem' : 'Selecionar Imagem'}
+          </Text>
+        </TouchableOpacity>
+        {imagem ? (
+          <Image source={{ uri: imagem }} style={styles.imagemPreview} />
+        ) : null}
+        <TouchableOpacity style={styles.botao} onPress={cadastrarLugar}>
+          <Text style={styles.botaoTexto}>Cadastrar Cidade</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    backgroundColor: '#eaf2f8',
-    justifyContent: 'center',
-    padding: 16,
-  },
   container: {
-    flex: 1,
+    flexGrow: 1,
+    padding: 28,
     justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
   },
-  card: {
-    backgroundColor: '#fff',
-    padding: 24,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  title: {
-    fontSize: 28,
+  titulo: {
+    fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
     color: '#FF6B00',
+    marginBottom: 10,
+    textAlign: 'center',
+    fontFamily: 'Poppins-Bold',
+    letterSpacing: 1,
   },
-  label: {
+  subtitulo: {
     fontSize: 16,
-    marginBottom: 6,
     color: '#333',
+    marginBottom: 30,
+    textAlign: 'center',
+    fontFamily: 'Poppins-Regular',
   },
   input: {
-    backgroundColor: '#f9f9f9',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
+    width: '100%',
+    borderWidth: 1.5,
+    borderColor: '#FF6B00',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginBottom: 18,
+    fontSize: 16,
+    color: '#333',
+    fontFamily: 'Poppins-Regular',
+    elevation: 2,
+  },
+  row: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  inputHalf: {
+    width: '48%',
+  },
+  imagemPicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fffbe6',
+    borderStyle: 'dashed',
+    borderWidth: 1.5,
+    borderColor: '#FF6B00',
+    marginBottom: 10,
+    height: 50,
+  },
+  imagemPreview: {
+    width: '100%',
+    height: 150,
+    borderRadius: 12,
+    marginBottom: 18,
+    resizeMode: 'cover',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#FF6B00',
   },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  button: {
+  botao: {
     backgroundColor: '#FF6B00',
-    paddingVertical: 15,
-    borderRadius: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 30,
     alignItems: 'center',
     marginTop: 10,
+    elevation: 3,
+    width: '100%',
   },
-  buttonText: {
+  botaoTexto: {
     color: '#fff',
+    fontSize: 18,
     fontWeight: 'bold',
-    fontSize: 17,
+    fontFamily: 'Poppins-Bold',
+    letterSpacing: 1,
   },
 });

@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, StyleSheet, Modal, TextInput, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, FlatList, ActivityIndicator, Image, Platform } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import app from '../Config/FireBaseConfig';
-import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import AwesomeAlert from 'react-native-awesome-alerts';
 import { useFonts, Poppins_400Regular, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { FontAwesome } from '@expo/vector-icons';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { supabase } from '../Config/SupaBaseConfig';
-import { ActivityIndicator } from 'react-native-web';
 
-
-const BUCKET_NAME = 'images-mapa'
 const db = getFirestore(app);
-
+const auth = getAuth(app);
 
 export default function Visualizar({ navigation }) {
     const [lugares, setLugares] = useState([]);
@@ -19,20 +18,39 @@ export default function Visualizar({ navigation }) {
     const [descricao_lugar, setDescricao_Lugar] = useState('');
     const [latitude_lugar, setLatitude_Lugar] = useState('');
     const [longitude_lugar, setLongitude_lugar] = useState('');
+    const [imagem_lugar, setImagem_lugar] = useState('');
+    const [imagem_local_file, setImagem_local_file] = useState(null); // Para upload
     const [modalVisible_editar, setModalVisible_editar] = useState(false);
     const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
     const [deleteid, setDeleteID] = useState(null);
     const [lugarSelecionado, setLugarSelecionado] = useState(null);
-    const [images, setImages] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [abaFavoritos, setAbaFavoritos] = useState(false);
+    const [favoritos, setFavoritos] = useState([]);
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
+        const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+            setUser(firebaseUser);
+        });
+
+        const unsubscribeNav = navigation.addListener('focus', () => {
+            carregarLugares();
+            carregarFavoritos();
+        });
         carregarLugares();
-    }, [])
+        carregarFavoritos();
+
+        return () => {
+            unsubscribeAuth();
+            unsubscribeNav();
+        };
+    }, [navigation]);
 
     const carregarLugares = async () => {
+        setLoading(true);
         try {
-            const lugaresRef = await getDocs(collection(db, 'pontosTuristicos'))
+            const lugaresRef = await getDocs(collection(db, 'pontosTuristicos'));
             const lugares = lugaresRef.docs.map(doc => {
                 const data = doc.data();
                 return {
@@ -41,171 +59,247 @@ export default function Visualizar({ navigation }) {
                     descricao: String(data.descricao),
                     latitude: data.latitude,
                     longitude: data.longitude,
+                    imagem: data.imagem || '',
                 }
             });
-
-            setLugares(lugares)
-            fetchImages(lugares)
-        }
-        catch (error) {
+            setLugares(lugares);
+        } catch (error) {
             console.error('Erro ao carregar lugares:', error);
         }
-    }
+        setLoading(false);
+    };
 
-
-
-
-    const fetchImages = async (lugares) => {
-        setLoading(true);
-
+    const carregarFavoritos = async () => {
         try {
-            const { data, error } = await supabase
-                .storage
-                .from(BUCKET_NAME)
-                .list("", { limit: 100 });
-
-            if (error) throw error;
-
-            const imageFiles = data.filter(file =>
-                file.name.match(/\.(jpg|jpeg|png)$/i)
-            );
-
-            const imageURLs = lugares.map(lugar => {
-                const imagemCorrespondente = imageFiles.find(file =>
-                    file.name.startsWith(lugar.id)
-                );
-                return {
-                    id: lugar.id,
-                    url: imagemCorrespondente
-                        ? supabase.storage.from(BUCKET_NAME).getPublicUrl(imagemCorrespondente.name).data.publicUrl
-                        : null,
-                }
-            });
-
-            setImages(imageURLs)
-        }
-        catch (error) {
-            console.log('Erro ao vizualizar imagens:', error)
-        }
-        finally {
-            setLoading(false)
+            if (!user) {
+                // Se não estiver logado, tenta pegar do localStorage (AsyncStorage)
+                const localFav = await getLocalFavoritos();
+                setFavoritos(localFav);
+                return;
+            }
+            const favRef = doc(db, 'favoritos', user.uid);
+            const favSnap = await getDoc(favRef);
+            if (favSnap.exists()) {
+                setFavoritos(favSnap.data().lugares || []);
+            } else {
+                setFavoritos([]);
+            }
+        } catch (error) {
+            setFavoritos([]);
         }
     };
 
+    // Função para pegar favoritos locais (AsyncStorage)
+    const getLocalFavoritos = async () => {
+        try {
+            const fav = await window?.localStorage?.getItem('favoritos') || '[]';
+            return JSON.parse(fav);
+        } catch {
+            return [];
+        }
+    };
 
+    // Função para salvar favoritos locais (AsyncStorage)
+    const setLocalFavoritos = async (favArr) => {
+        try {
+            await window?.localStorage?.setItem('favoritos', JSON.stringify(favArr));
+        } catch {}
+    };
 
+    // Selecionar imagem da galeria e preparar para upload
+    const escolherImagem = async () => {
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
 
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+            setImagem_lugar(result.assets[0].uri);
+            setImagem_local_file(result.assets[0]);
+        }
+    };
+
+    // Função para upload da imagem no Supabase Storage
+    const uploadImagemSupabase = async (file) => {
+        if (!file) return null;
+        try {
+            // Gera um nome único para o arquivo
+            const fileExt = file.uri.split('.').pop();
+            const fileName = `${Date.now()}_${Math.floor(Math.random() * 10000)}.${fileExt}`;
+            const path = `imagens/${fileName}`;
+
+            let fileToUpload;
+            if (Platform.OS === 'web') {
+                const response = await fetch(file.uri);
+                fileToUpload = await response.blob();
+            } else {
+                const response = await fetch(file.uri);
+                fileToUpload = await response.blob();
+            }
+
+            const { error } = await supabase.storage.from('imagens').upload(path, fileToUpload, {
+                cacheControl: '3600',
+                upsert: false,
+                contentType: file.type || 'image/jpeg',
+            });
+
+            if (error) {
+                console.error('Erro ao subir imagem no Supabase:', error);
+                return null;
+            }
+
+            // Retorna a URL pública da imagem
+            const { data } = supabase.storage.from('imagens').getPublicUrl(path);
+            return data.publicUrl;
+        } catch (err) {
+            console.error('Erro upload imagem:', err);
+            return null;
+        }
+    };
 
     const editarLugar = async () => {
         try {
-            const lugarRef = doc(db, 'pontosTuristicos', lugarSelecionado.id)
+            let urlImagem = imagem_lugar;
+            // Se o usuário selecionou uma nova imagem, faz upload no Supabase
+            if (imagem_local_file) {
+                const url = await uploadImagemSupabase(imagem_local_file);
+                if (url) urlImagem = url;
+            }
+
+            const lugarRef = doc(db, 'pontosTuristicos', lugarSelecionado.id);
             await updateDoc(lugarRef, {
                 nome: nome_lugar,
                 descricao: descricao_lugar,
                 latitude: latitude_lugar,
                 longitude: longitude_lugar,
-            })
+                imagem: urlImagem,
+            });
 
-            setNome_lugar('')
-            setDescricao_Lugar('')
-            setLatitude_Lugar('')
-            setLongitude_lugar('')
-            setLugarSelecionado(null)
+            setLugares(prev =>
+                prev.map(l =>
+                    l.id === lugarSelecionado.id
+                        ? {
+                            ...l,
+                            nome: nome_lugar,
+                            descricao: descricao_lugar,
+                            latitude: latitude_lugar,
+                            longitude: longitude_lugar,
+                            imagem: urlImagem,
+                        }
+                        : l
+                )
+            );
+
+            setNome_lugar('');
+            setDescricao_Lugar('');
+            setLatitude_Lugar('');
+            setLongitude_lugar('');
+            setImagem_lugar('');
+            setImagem_local_file(null);
+            setLugarSelecionado(null);
             setModalVisible_editar(false);
-            carregarLugares();
-        }
-        catch (error) {
+        } catch (error) {
             console.error('Erro ao editar lugar:', error);
         }
-    }
+    };
 
-
-
-
-
-    const abrirModalEditar = (lugares) => {
-        setLugarSelecionado(lugares)
-        setModalVisible_editar(true)
-        setNome_lugar(lugares.nome)
-        setDescricao_Lugar(lugares.descricao)
-        setLatitude_Lugar(lugares.latitude)
-        setLongitude_lugar(lugares.longitude)
-    }
-
-
-
+    const abrirModalEditar = (lugar) => {
+        setLugarSelecionado(lugar);
+        setModalVisible_editar(true);
+        setNome_lugar(lugar.nome);
+        setDescricao_Lugar(lugar.descricao);
+        setLatitude_Lugar(lugar.latitude ? String(lugar.latitude) : '');
+        setLongitude_lugar(lugar.longitude ? String(lugar.longitude) : '');
+        setImagem_lugar(lugar.imagem || '');
+        setImagem_local_file(null);
+    };
 
     const confirmarExclusao = (id) => {
-        setDeleteAlertVisible(true)
-        setDeleteID(id)
-    }
-
-
-
+        setDeleteAlertVisible(true);
+        setDeleteID(id);
+    };
 
     const excluirlocalidade = async () => {
         try {
-            await deleteDoc(doc(db, 'pontosTuristicos', deleteid))
-            setDeleteAlertVisible(false)
+            await deleteDoc(doc(db, 'pontosTuristicos', deleteid));
+            setDeleteAlertVisible(false);
             carregarLugares();
+            carregarFavoritos();
+        } catch (error) {
+            console.error('Error ao excluir Localidade', error);
         }
-        catch (error) {
-            console.error('Error ao excluir Localidade', error)
+    };
+
+    // Favoritar/desfavoritar SEM exigir login
+    const alternarFavorito = async (item) => {
+        try {
+            let favoritosAtuais = favoritos || [];
+            let novosFavoritos = [];
+            if (favoritosAtuais.includes(item.id)) {
+                novosFavoritos = favoritosAtuais.filter(id => id !== item.id);
+            } else {
+                novosFavoritos = [...favoritosAtuais, item.id];
+            }
+            setFavoritos(novosFavoritos);
+
+            // Se o usuário estiver logado, salva no Firestore
+            if (user) {
+                const favRef = doc(db, 'favoritos', user.uid);
+                await setDoc(favRef, { lugares: novosFavoritos });
+            } else {
+                // Salva localmente (web: localStorage, mobile: AsyncStorage)
+                setLocalFavoritos(novosFavoritos);
+            }
+        } catch (error) {
+            alert('Erro ao favoritar. Tente novamente.');
+            console.error('Erro ao favoritar:', error);
         }
-    }
+    };
 
-    const renderItem = ({ item }) => {
+    // Mostra só os favoritos na aba Favoritos
+    const lugaresFiltrados = abaFavoritos
+        ? lugares.filter(l => favoritos.includes(l.id))
+        : lugares;
 
-        const imagemDolugar = images.find(img => img.id === item.id)
-
-        return (
-            <View style={styles.card}>
-                <Text style={styles.title}>{item.nome}</Text>
-                <View style={styles.content}>
-                    <View style={styles.row}>
-
-                        {loading ? (
-                            <ActivityIndicator size="large" color='#FF6B00' />
-                        ) : (
-                            imagemDolugar && imagemDolugar.url ? (
-                                <View style={styles.imageContainer}>
-                                    <Image
-                                        source={{ uri: imagemDolugar.url }}
-                                        style={styles.image}
-                                        resizeMode='cover'
-                                    />
-                                </View>
-                            ) : (
-                                <Text>Imagem nao encontrada</Text>
-                            )
-                        )}
-
-                        <View style={styles.buttons}>
-                            <TouchableOpacity style={styles.button_mapa} onPress={() => navigation.navigate('Mapa', { latitude: item.latitude, longitude: item.longitude })}>
-                                <FontAwesome name="map" size={20} color="white" />
-                                <Text style={styles.buttonText}>Ver no Mapa</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.button_editar} onPress={() => abrirModalEditar(item)}>
-                                <FontAwesome name="pencil" size={20} color="white" />
-                                <Text style={styles.buttonText}>Editar</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.button_excluir} onPress={() => confirmarExclusao(item.id)}>
-                                <FontAwesome name="trash" size={20} color="white" />
-                                <Text style={styles.buttonText}>Excluir</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.button_detalhes} onPress={() => navigation.navigate('Detalhes', { marcador: item })}>
-                                <FontAwesome name="info-circle" size={20} color="white" />
-                                <Text style={styles.buttonText}>Detalhes</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+    const renderItem = ({ item }) => (
+        <View style={styles.card}>
+            {item.imagem ? (
+                <Image source={{ uri: item.imagem }} style={styles.imagemLocal} />
+            ) : (
+                <View style={styles.imagemPlaceholder}><Text>Sem imagem</Text></View>
+            )}
+            <Text style={styles.title}>{item.nome}</Text>
+            <View style={styles.content}>
+                <Text style={{ marginBottom: 8, color: '#555' }}>{item.descricao}</Text>
+                <Text style={{ color: '#888' }}>Latitude: {item.latitude}</Text>
+                <Text style={{ color: '#888' }}>Longitude: {item.longitude}</Text>
+                <View style={styles.buttons}>
+                    <TouchableOpacity style={styles.button_mapa} onPress={() => navigation.navigate('Mapa', { latitude: item.latitude, longitude: item.longitude })}>
+                        <FontAwesome name="map" size={20} color="white" />
+                        <Text style={styles.buttonText}>Ver no Mapa</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.button_editar} onPress={() => abrirModalEditar(item)}>
+                        <FontAwesome name="pencil" size={20} color="white" />
+                        <Text style={styles.buttonText}>Editar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.button_excluir} onPress={() => confirmarExclusao(item.id)}>
+                        <FontAwesome name="trash" size={20} color="white" />
+                        <Text style={styles.buttonText}>Excluir</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => alternarFavorito(item)}>
+                        <FontAwesome
+                            name={favoritos.includes(item.id) ? "star" : "star-o"}
+                            size={28}
+                            color="#FFD700"
+                            style={{ marginLeft: 10 }}
+                        />
+                    </TouchableOpacity>
                 </View>
-            </View >
-        )
-    }
+            </View>
+        </View>
+    );
 
     let [fontsLoaded] = useFonts({
         'Poppins-Regular': Poppins_400Regular,
@@ -217,67 +311,92 @@ export default function Visualizar({ navigation }) {
     }
 
     return (
-        <View style={{ flex: 1 }}>
-            <ScrollView style={styles.container}>
-                <Text style={styles.title_mapa}>Visualizar os lugares do mapa</Text>
-
+        <View style={{ flex: 1, backgroundColor: '#F5F5F5' }}>
+            <View style={styles.abas}>
+                <TouchableOpacity
+                    style={[styles.abaBotao, !abaFavoritos && styles.abaAtiva]}
+                    onPress={() => setAbaFavoritos(false)}
+                >
+                    <Text style={styles.abaTexto}>Todos</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.abaBotao, abaFavoritos && styles.abaAtiva]}
+                    onPress={() => setAbaFavoritos(true)}
+                >
+                    <Text style={styles.abaTexto}>Favoritos</Text>
+                </TouchableOpacity>
+            </View>
+            <Text style={styles.title_mapa}>{abaFavoritos ? "Meus Favoritos" : "Visualizar os lugares do mapa"}</Text>
+            {loading ? (
+                <ActivityIndicator size="large" color="#FF6B00" style={{ marginTop: 40 }} />
+            ) : (
                 <FlatList
-                    data={lugares}
+                    data={lugaresFiltrados}
                     renderItem={renderItem}
+                    keyExtractor={item => item.id}
+                    contentContainerStyle={styles.imageList}
+                    ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 40 }}>Nenhum lugar encontrado.</Text>}
+                    showsVerticalScrollIndicator={true}
                 />
+            )}
 
-                <Modal visible={modalVisible_editar} transparent animationType="fade">
-                    <View style={styles.modalcontainer}>
-                        <View style={styles.modal}>
-                            <Text style={styles.modalTitulo}>Editar Localização</Text>
-
-                            <TextInput
-                                style={styles.input}
-                                value={nome_lugar}
-                                onChangeText={setNome_lugar}
-                                placeholder="Nome da localização"
-                                placeholderTextColor="rgba(0, 0, 0, 0.5)"
-                            />
-
-                            <TextInput
-                                style={styles.input}
-                                value={descricao_lugar}
-                                onChangeText={setDescricao_Lugar}
-                                placeholder="Descrição da localização"
-                                placeholderTextColor="rgba(0, 0, 0, 0.5)"
-                            />
-
-                            <TextInput
-                                style={styles.input}
-                                value={latitude_lugar}
-                                onChangeText={setLatitude_Lugar}
-                                placeholder="Latitude"
-                                placeholderTextColor="rgba(0, 0, 0, 0.5)"
-                                keyboardType="numeric"
-                            />
-
-                            <TextInput
-                                style={styles.input}
-                                value={longitude_lugar}
-                                onChangeText={setLongitude_lugar}
-                                placeholder="Longitude"
-                                placeholderTextColor="rgba(0, 0, 0, 0.5)"
-                                keyboardType="numeric"
-                            />
-
-                            <View style={styles.modalBotoes}>
-                                <TouchableOpacity style={styles.botaoCancelar} onPress={() => setModalVisible_editar(false)}>
-                                    <Text style={styles.botaoTexto}>Cancelar</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity style={styles.botaoSalvar} onPress={editarLugar}>
-                                    <Text style={styles.botaoTexto}>Salvar Edições</Text>
-                                </TouchableOpacity>
-                            </View>
+            <Modal visible={modalVisible_editar} transparent animationType="fade">
+                <View style={styles.modalcontainer}>
+                    <View style={styles.modal}>
+                        <Text style={styles.modalTitulo}>Editar Localização</Text>
+                        <TextInput
+                            style={styles.input}
+                            value={nome_lugar}
+                            onChangeText={setNome_lugar}
+                            placeholder="Nome da localização"
+                            placeholderTextColor="rgba(0, 0, 0, 0.5)"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={descricao_lugar}
+                            onChangeText={setDescricao_Lugar}
+                            placeholder="Descrição da localização"
+                            placeholderTextColor="rgba(0, 0, 0, 0.5)"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={latitude_lugar}
+                            onChangeText={setLatitude_Lugar}
+                            placeholder="Latitude"
+                            placeholderTextColor="rgba(0, 0, 0, 0.5)"
+                            keyboardType="numeric"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            value={longitude_lugar}
+                            onChangeText={setLongitude_lugar}
+                            placeholder="Longitude"
+                            placeholderTextColor="rgba(0, 0, 0, 0.5)"
+                            keyboardType="numeric"
+                        />
+                        <TouchableOpacity
+                            style={[styles.input, { alignItems: 'center', justifyContent: 'center', flexDirection: 'row' }]}
+                            onPress={escolherImagem}
+                        >
+                            <FontAwesome name="image" size={20} color="#FF6B00" />
+                            <Text style={{ marginLeft: 10, color: '#FF6B00', fontFamily: 'Poppins-Regular' }}>
+                                {imagem_lugar ? 'Trocar Imagem' : 'Selecionar Imagem'}
+                            </Text>
+                        </TouchableOpacity>
+                        {imagem_lugar ? (
+                            <Image source={{ uri: imagem_lugar }} style={{ width: '100%', height: 120, borderRadius: 10, marginTop: 10 }} />
+                        ) : null}
+                        <View style={styles.modalBotoes}>
+                            <TouchableOpacity style={styles.botaoCancelar} onPress={() => setModalVisible_editar(false)}>
+                                <Text style={styles.botaoTexto}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.botaoSalvar} onPress={editarLugar}>
+                                <Text style={styles.botaoTexto}>Salvar Edições</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
-                </Modal>
-            </ScrollView >
+                </View>
+            </Modal>
 
             <AwesomeAlert
                 show={deleteAlertVisible}
@@ -353,7 +472,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: ' #F5F5F5',
+        backgroundColor: '#F5F5F5',
     },
     title_mapa: {
         textAlign: 'center',
@@ -373,11 +492,27 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         elevation: 5,
     },
+    imagemLocal: {
+        width: '100%',
+        height: 180,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        resizeMode: 'cover',
+    },
+    imagemPlaceholder: {
+        width: '100%',
+        height: 180,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        backgroundColor: '#eee',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     title: {
         fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
-        backgroundColor: ' #FF6B00',
+        backgroundColor: '#FF6B00',
         padding: 10,
         borderTopRightRadius: 16,
         borderTopLeftRadius: 16,
@@ -387,91 +522,66 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         padding: 20,
     },
-    row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    lugar_image: {
-        width: 150,
-        height: 100,
-        borderRadius: 10,
-        resizeMode: 'cover',
-    },
-
     imageList: {
         paddingBottom: 100,
     },
-    imageContainer: {
-        marginBottom: 24,
-        borderRadius: 18,
-        backgroundColor: '#FF6B00',
-        padding: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.18,
-        shadowRadius: 12,
-        elevation: 8,
-        alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: '#000',
-        width: '50%'
-    },
-    image: {
-        width: "100%",
-        height: 200,
-        borderRadius: 8,
-        backgroundColor: "#eee",
-    },
     buttons: {
         flex: 1,
-        marginLeft: 20,
+        marginTop: 16,
+        flexDirection: 'row',
         justifyContent: 'space-between',
+        alignItems: 'center',
     },
     button_mapa: {
         padding: 10,
         borderRadius: 8,
         backgroundColor: '#007BFF',
-        marginBottom: 10,
-        display: 'flex',
+        marginRight: 5,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-around',
     },
     button_editar: {
         padding: 10,
         borderRadius: 8,
         backgroundColor: '#28A745',
-        marginBottom: 10,
-        display: 'flex',
+        marginRight: 5,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-around',
     },
     button_excluir: {
         padding: 10,
         borderRadius: 8,
         backgroundColor: '#DC3545',
-        marginBottom: 10,
-        display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-around',
-    },
-    button_detalhes: {
-        padding: 10,
-        borderRadius: 8,
-        backgroundColor: '#FF6B00',
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-around',
     },
     buttonText: {
         color: 'white',
         fontWeight: 'bold',
         textAlign: 'center',
         fontFamily: 'Poppins-Regular',
+        marginLeft: 6,
+    },
+    abas: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    abaBotao: {
+        paddingVertical: 8,
+        paddingHorizontal: 24,
+        borderRadius: 20,
+        backgroundColor: '#ddd',
+        marginHorizontal: 8,
+    },
+    abaAtiva: {
+        backgroundColor: '#FF6B00',
+    },
+    abaTexto: {
+        color: '#333',
+        fontFamily: 'Poppins-Bold',
+        fontSize: 16,
     },
     modalcontainer: {
         flex: 1,
@@ -527,7 +637,7 @@ const styles = StyleSheet.create({
     },
     botaoCancelar: {
         flex: 1,
-        marginright: 10,
+        marginRight: 10,
         paddingVertical: 12,
         borderRadius: 25,
         backgroundColor: '#FF3B30',
