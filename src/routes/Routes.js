@@ -39,7 +39,7 @@ function BottomTabs() {
                         case 'Visualizar':
                             iconName = focused ? 'list' : 'list-outline';
                             break;
-                        case 'CadastrarLugares':
+                        case 'Cadastrar Lugares':
                             iconName = focused ? 'add-circle' : 'add-circle-outline';
                             break;
                         case 'Inicio':
@@ -71,7 +71,7 @@ function BottomTabs() {
             })}
         >
             <Tab.Screen name="Visualizar" component={Visualizar} />
-            <Tab.Screen name="CadastrarLugares" component={CadastrarLugares} />
+            <Tab.Screen name="Cadastrar Lugares" component={CadastrarLugares} />
             <Tab.Screen name="Inicio" component={Inicio} />
             <Tab.Screen name="Mapa" component={Mapa} />
             <Tab.Screen name="Perfil" component={Perfil} />

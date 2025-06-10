@@ -233,7 +233,7 @@ export default function Home({ navigation }) {
         <Animated.View style={{ transform: [{ scale: scale2 }] }}>
           <Pressable
             style={[styles.button, { backgroundColor: '#009688' }]}
-            onPress={() => animateButton(scale2, 0.95, () => navigation.navigate('CadastrarLugares'))}
+            onPress={() => animateButton(scale2, 0.95, () => navigation.navigate('Cadastrar Lugares'))}
           >
             <Ionicons name="add-circle-outline" size={22} color="#fff" />
             <Text style={styles.buttonText}>Adicionar Local</Text>

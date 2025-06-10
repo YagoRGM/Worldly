@@ -486,6 +486,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 16,
         marginBottom: 30,
+        alignSelf: 'center',
+        width: '90%',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
@@ -509,13 +511,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     title: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
         textAlign: 'center',
+        color: '#fff',
         backgroundColor: '#FF6B00',
         padding: 10,
-        borderTopRightRadius: 16,
-        borderTopLeftRadius: 16,
+        borderBottomRightRadius: 14,
+        borderBottomLeftRadius: 14,
         fontFamily: 'Poppins-Regular',
     },
     content: {
@@ -533,7 +536,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     button_mapa: {
-        padding: 10,
+        padding: 8,
         borderRadius: 8,
         backgroundColor: '#007BFF',
         marginRight: 5,
@@ -541,7 +544,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     button_editar: {
-        padding: 10,
+        padding: 8,
         borderRadius: 8,
         backgroundColor: '#28A745',
         marginRight: 5,
@@ -549,7 +552,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     button_excluir: {
-        padding: 10,
+        padding: 8,
         borderRadius: 8,
         backgroundColor: '#DC3545',
         flexDirection: 'row',
@@ -560,6 +563,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         fontFamily: 'Poppins-Regular',
+        fontSize: 13,
         marginLeft: 6,
     },
     abas: {

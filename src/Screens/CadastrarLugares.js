@@ -40,31 +40,34 @@ export default function CadastrarLugares() {
         favorito: false,
         imagem: imagem || '',
       });
-      Alert.alert('Sucesso', 'Cidade cadastrada com sucesso!');
+      Alert.alert('Sucesso', 'Ponto cadastrada com sucesso!');
       setNome('');
       setDescricao('');
       setLatitude('');
       setLongitude('');
       setImagem('');
     } catch (error) {
-      Alert.alert('Erro', 'Erro ao cadastrar cidade.');
+      Alert.alert('Erro', 'Erro ao cadastrar ponto.');
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#F5F5F5' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.titulo}>Cadastrar Cidade</Text>
-        <Text style={styles.subtitulo}>Preencha os dados da cidade que merece ser lembrada!</Text>
+  <KeyboardAvoidingView
+    style={{ flex: 1, backgroundColor: '#F5F5F5' }}
+    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+  >
+    <ScrollView contentContainerStyle={styles.outerContainer} keyboardShouldPersistTaps="handled">
+      <View style={styles.box}>
+        <Text style={styles.titulo}>Cadastrar Ponto Turístico</Text>
+        <Text style={styles.subtitulo}>
+          Preencha os dados do ponto turístico que merece ser compartilhado!
+        </Text>
         <TextInput
-          placeholder="Nome da Cidade"
+          placeholder="Nome do Ponto Turístico"
           style={styles.input}
           value={nome}
           onChangeText={setNome}
-          placeholderTextColor="#FF6B00"
+          placeholderTextColor="#"
         />
         <TextInput
           placeholder="Descrição"
@@ -72,7 +75,7 @@ export default function CadastrarLugares() {
           value={descricao}
           onChangeText={setDescricao}
           multiline
-          placeholderTextColor="#FF6B00"
+          placeholderTextColor="#"
         />
         <View style={styles.row}>
           <TextInput
@@ -81,7 +84,7 @@ export default function CadastrarLugares() {
             keyboardType="numeric"
             value={latitude}
             onChangeText={setLatitude}
-            placeholderTextColor="#FF6B00"
+            placeholderTextColor="#"
           />
           <TextInput
             placeholder="Longitude"
@@ -89,12 +92,12 @@ export default function CadastrarLugares() {
             keyboardType="numeric"
             value={longitude}
             onChangeText={setLongitude}
-            placeholderTextColor="#FF6B00"
+            placeholderTextColor="#"
           />
         </View>
         <TouchableOpacity style={[styles.input, styles.imagemPicker]} onPress={escolherImagem}>
-          <FontAwesome name="image" size={20} color="#FF6B00" />
-          <Text style={{ marginLeft: 10, color: '#FF6B00', fontFamily: 'Poppins-Regular' }}>
+          <FontAwesome name="image" size={20} color="#ff6b00" />
+          <Text style={{ marginLeft: 10, color: '#ff6b00', fontFamily: 'Poppins-Regular' }}>
             {imagem ? 'Trocar Imagem' : 'Selecionar Imagem'}
           </Text>
         </TouchableOpacity>
@@ -102,56 +105,71 @@ export default function CadastrarLugares() {
           <Image source={{ uri: imagem }} style={styles.imagemPreview} />
         ) : null}
         <TouchableOpacity style={styles.botao} onPress={cadastrarLugar}>
-          <Text style={styles.botaoTexto}>Cadastrar Cidade</Text>
+          <Text style={styles.botaoTexto}>Cadastrar Ponto Turístico</Text>
         </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
+      </View>
+    </ScrollView>
+  </KeyboardAvoidingView>
+);
 }
 
 const styles = StyleSheet.create({
-  container: {
+  outerContainer: {
     flexGrow: 1,
-    padding: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#E8F5F2',
+    paddingVertical: 32,
+  },
+  box: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#CDE4DF',
   },
   titulo: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#FF6B00',
-    marginBottom: 10,
+    color: '#00796B',
+    marginBottom: 8,
     textAlign: 'center',
     fontFamily: 'Poppins-Bold',
     letterSpacing: 1,
   },
   subtitulo: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 30,
+    fontSize: 15,
+    color: '#4F4F4F',
+    marginBottom: 24,
     textAlign: 'center',
     fontFamily: 'Poppins-Regular',
   },
   input: {
     width: '100%',
     borderWidth: 1.5,
-    borderColor: '#FF6B00',
-    backgroundColor: '#fff',
+    borderColor: '#ff6b00',
+    backgroundColor: '#F9FDFD',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 18,
-    marginBottom: 18,
+    marginBottom: 16,
     fontSize: 16,
     color: '#333',
     fontFamily: 'Poppins-Regular',
-    elevation: 2,
   },
   row: {
     flexDirection: 'row',
     width: '100%',
     justifyContent: 'space-between',
-    marginBottom: 18,
+    marginBottom: 16,
   },
   inputHalf: {
     width: '48%',
@@ -160,35 +178,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fffbe6',
+    backgroundColor: '#ECFDFB',
     borderStyle: 'dashed',
     borderWidth: 1.5,
-    borderColor: '#FF6B00',
+    borderColor: '#ff6b00',
     marginBottom: 10,
     height: 50,
+    borderRadius: 12,
   },
   imagemPreview: {
     width: '100%',
     height: 150,
     borderRadius: 12,
-    marginBottom: 18,
+    marginBottom: 16,
     resizeMode: 'cover',
     borderWidth: 1,
-    borderColor: '#FF6B00',
+    borderColor: '#B2DFDB',
   },
   botao: {
-    backgroundColor: '#FF6B00',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 30,
+    backgroundColor: '#00796B',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 25,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
     elevation: 3,
     width: '100%',
+    marginBottom: 6,
   },
   botaoTexto: {
-    color: '#fff',
-    fontSize: 18,
+    color: '#ffffff',
+    fontSize: 17,
     fontWeight: 'bold',
     fontFamily: 'Poppins-Bold',
     letterSpacing: 1,

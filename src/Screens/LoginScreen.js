@@ -1,15 +1,9 @@
 import React, { useState } from "react";
 import * as Animatable from "react-native-animatable";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  Image,
-} from "react-native";
-import { supabase } from "../Config/SupaBaseConfig";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image } from "react-native";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth, db } from "../Config/FireBaseConfig";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 export default function LoginScreen({ navigation }) {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -20,88 +14,84 @@ export default function LoginScreen({ navigation }) {
 
   const handleCadastro = async () => {
     if (!email || !senha || !confirmarSenha || !nome) {
-      Alert.alert("Erro", "Preencha todos os campos.");
+      alert("Erro, preencha todos os campos.");
       return;
     }
 
     if (senha !== confirmarSenha) {
-      Alert.alert("Erro", "As senhas não coincidem.");
+      alert("Erro, as senhas não coincidem.");
       return;
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password: senha,
-        options: {
-          data: { nome },
-        },
+      // Criar usuário no Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+      const user = userCredential.user;
+
+      // Atualizar perfil do Firebase Auth
+      await updateProfile(user, {
+        displayName: nome,
+
       });
 
-      if (error) {
-        throw error;
-      }
+      // Salvar usuário no Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        nome: nome,
+        email: email,
+        photoURL: "",
+        uid: user.uid,
+      });
 
-      Alert.alert(
-        "Usuário cadastrado",
-        "Usuário cadastrado com sucesso! Verifique seu e-mail para confirmar."
-      );
+      Alert.alert("Sucesso", "Usuário cadastrado com sucesso!");
 
+      // Resetar campos
       setIsRegistering(false);
       setEmail("");
       setSenha("");
       setConfirmarSenha("");
       setNome("");
+
     } catch (error) {
-      console.error("Erro ao cadastrar:", error.message);
-      Alert.alert("Erro", error.message);
+      console.error("Erro ao criar o usuário:", error.message);
+      alert("Erro", error.message);
     }
   };
 
   const handleLogin = async () => {
     if (!email || !senha) {
-      Alert.alert("Erro", "Preencha todos os campos.");
+      alert("Erro, preencha todos os campos.");
       return;
     }
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: senha,
-      });
+      // Fazer login
+      const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+      const user = userCredential.user;
 
-      if (error) {
-        if (error.message === "Email not confirmed") {
-          Alert.alert(
-            "Confirme seu e-mail",
-            "Verifique sua caixa de entrada e confirme seu e-mail antes de fazer login."
-          );
-        } else if (error.message === "Invalid login credentials") {
-          Alert.alert("Erro", "E-mail ou senha incorretos.");
-        } else {
-          Alert.alert("Erro no login", error.message);
-        }
-        return;
+      // Buscar informações no Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        console.log("Usuário logado:", userData);
+      } else {
+        console.log("Usuário logado mas não encontrado no Firestore.");
       }
 
-      Alert.alert("Usuário logado", "Usuário logado com sucesso!");
+      alert(`Bem-vindo, Olá, ${user.displayName || "usuário"}!`);
+
+      // Redirecionar para a tela inicial
       navigation.navigate("Inicio");
+
     } catch (error) {
       console.error("Erro no login:", error.message);
-      Alert.alert("Erro", error.message);
+      alert("Erro", error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Animatable.View
-        animation="fadeInLeft"
-        delay={500}
-        style={styles.containerHeader}
-      >
-        <Text style={styles.message}>
-          {isRegistering ? "Cadastro" : "Login"}
-        </Text>
+      <Animatable.View animation="fadeInLeft" delay={500} style={styles.containerHeader}>
+        <Text style={styles.message}>{isRegistering ? "Cadastro" : "Login"}</Text>
       </Animatable.View>
 
       <Animatable.View animation="fadeInUp" style={styles.containerForm}>
@@ -208,31 +198,32 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     marginTop: 20,
   },
   input: {
     borderBottomWidth: 1,
     height: 40,
     marginBottom: 12,
-    fontSize: 16,
+    fontSize: 18,
   },
   button: {
-    backgroundColor: "#1e90ff",
+    backgroundColor: "#00796b",
     width: "100%",
-    borderRadius: 4,
-    paddingVertical: 10,
+    borderRadius: 6,
+    paddingVertical: 12,
     marginTop: 20,
   },
   buttonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 20,
     textAlign: "center",
     fontWeight: "bold",
   },
   registerToggle: {
     color: "#1e90ff",
     marginTop: 20,
+    fontSize: 20,
     textAlign: "center",
     textDecorationLine: "underline",
   },

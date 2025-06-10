@@ -162,7 +162,7 @@ export default function Mapa({ navigation, route }) {
             </>
           )}
 
-          <TouchableOpacity style={styles.botaoCadastrar} onPress={() => navigation.navigate('CadastrarLugares')}>
+          <TouchableOpacity style={styles.botaoCadastrar} onPress={() => navigation.navigate('Cadastrar Lugares')}>
             <Text style={styles.simboloMais}>+</Text>
             <Text style={styles.textoBotaoCadastrar}> Cadastrar Lugar</Text>
           </TouchableOpacity>
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     bottom: 20,
     left: 32,
     right: 32,
-    backgroundColor: '#4285F4',
+    backgroundColor: '#00796B',
     paddingVertical: 8,
     borderRadius: 10,
     display: 'flex',
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   botaoDetalhes: {
-    backgroundColor: '#34A853',
+    backgroundColor: '#00796B',
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
