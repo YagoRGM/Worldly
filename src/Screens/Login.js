@@ -1,101 +1,219 @@
-import React from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity, TextInput } from "react-native";
+import React, { useState } from "react";
 import * as Animatable from "react-native-animatable";
-import { useNavigation } from "@react-navigation/native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { supabase } from "../Config/SupaBaseConfig";
 
-export default function Inicio() {
-    const navigation = useNavigation();
+export default function LoginScreen({ navigation }) {
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [nome, setNome] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
 
-    return (
+  const handleCadastro = async () => {
+    if (!email || !senha || !confirmarSenha || !nome) {
+      Alert.alert("Erro", "Preencha todos os campos.");
+      return;
+    }
+
+    if (senha !== confirmarSenha) {
+      Alert.alert("Erro", "As senhas não coincidem.");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password: senha,
+        options: {
+          data: { nome }
+        }
+      });
+
+      if (error) throw error;
+
+      Alert.alert("Sucesso", "Usuário cadastrado com sucesso! Verifique seu e-mail para ativar a conta.");
+
+      setIsRegistering(false);
+      setEmail("");
+      setSenha("");
+      setConfirmarSenha("");
+      setNome("");
+    } catch (error) {
+      console.error("Erro ao criar o usuário:", error.message);
+      Alert.alert("Erro", error.message);
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!email || !senha) {
+      Alert.alert("Erro", "Preencha todos os campos.");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: senha,
+      });
+
+      if (error) throw error;
+
+      // Pega o nome do usuário do próprio Auth
+      const nomeUsuario = data.user.user_metadata?.nome || data.user.email;
+
+      Alert.alert("Bem-vindo", `Olá, ${nomeUsuario}!`);
+      navigation.navigate("Inicio");
+    } catch (error) {
+      console.error("Erro no login:", error.message);
+      Alert.alert("Erro", error.message);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: "#242424" }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={styles.container}>
-            <View style={styles.ContainerLogo}>
-                <Animatable.Image
-                    animation="flipInY"
-                    delay={600}
-                    source={require('../../src/assets/img/Worldly__1_-removebg-preview.png')}
-                    style={{ width: '100%' }}
-                    resizeMode="contain"
+          <Animatable.View animation="fadeInLeft" delay={500} style={styles.containerHeader}>
+            <Text style={styles.message}>{isRegistering ? "Cadastro" : "Login"}</Text>
+          </Animatable.View>
+
+          <Animatable.View animation="fadeInUp" style={styles.containerForm}>
+            <Image
+              source={require("../../src/assets/img/2-removebg-preview.png")}
+              style={styles.formImage}
+              resizeMode="contain"
+            />
+
+            {isRegistering && (
+              <>
+                <Text style={styles.title}>Nome</Text>
+                <TextInput
+                  placeholder="Digite seu nome"
+                  style={styles.input}
+                  value={nome}
+                  onChangeText={setNome}
                 />
-            </View>
+              </>
+            )}
 
-            <Animatable.View delay={600} animation="fadeInUp" style={styles.containerForm}>
-                <Text style={styles.title}>Bem-vindo!</Text>
-                <Text style={styles.subText}>
-                    "Rastreamos o 𝗜𝗻𝘃𝗶𝘀𝗶́𝘃𝗲𝗹, Você conquista o 𝗜𝗺𝗽𝗼𝘀𝘀𝗶́𝘃𝗲𝗹"
+            <Text style={styles.title}>Email</Text>
+            <TextInput
+              placeholder="Digite seu email"
+              style={styles.input}
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+
+            <Text style={styles.title}>Senha</Text>
+            <TextInput
+              placeholder="Digite sua senha"
+              style={styles.input}
+              secureTextEntry
+              autoCapitalize="none"
+              value={senha}
+              onChangeText={setSenha}
+            />
+
+            {isRegistering && (
+              <>
+                <Text style={styles.title}>Confirmar Senha</Text>
+                <TextInput
+                  placeholder="Confirme sua senha"
+                  style={styles.input}
+                  secureTextEntry
+                  value={confirmarSenha}
+                  onChangeText={setConfirmarSenha}
+                />
+              </>
+            )}
+
+            <Animatable.View animation="slideInUp" duration={800}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={isRegistering ? handleCadastro : handleLogin}
+              >
+                <Text style={styles.buttonText}>
+                  {isRegistering ? "Cadastrar" : "Acessar"}
                 </Text>
-
-                <TouchableOpacity
-                    style={styles.button}
-                    onPress={() => navigation.navigate('LoginScreen')}
-                >
-                    <Text style={styles.buttonText}>Acessar</Text>
-                </TouchableOpacity>
+              </TouchableOpacity>
             </Animatable.View>
+
+            <Animatable.View animation="slideInUp" delay={300} duration={800}>
+              <TouchableOpacity onPress={() => setIsRegistering(!isRegistering)}>
+                <Text style={styles.registerToggle}>
+                  {isRegistering ? "Voltar para o login" : "Criar uma conta"}
+                </Text>
+              </TouchableOpacity>
+            </Animatable.View>
+          </Animatable.View>
         </View>
-    );
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#242424',
-    },
-    ContainerLogo: {
-        flex: 2,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    containerForm: {
-        flex: 1,
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 25,
-        borderTopRightRadius: 25,
-        paddingStart: '5%',
-        paddingEnd: '5%',
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginTop: 28,
-        marginBottom: 12,
-        textAlign: 'center',
-    },
-    subText: {
-        color: '#000',
-        fontSize: 16,
-        marginBottom: 16,
-        textAlign: 'center',
-        fontStyle: 'italic',
-    },
-    inputContainer: {
-        width: '100%',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    input: {
-        width: '90%',
-        height: 50,
-        borderColor: '#ccc',
-        borderWidth: 1,
-        borderRadius: 10,
-        paddingHorizontal: 10,
-        marginBottom: 10,
-        backgroundColor: '#F0F0F0',
-    },
-    button: {
-        position: 'absolute',
-        backgroundColor: '#FF6B00',
-        borderRadius: 50,
-        paddingVertical: 10,
-        width: '60%',
-        alignSelf: 'center',
-        bottom: '10%',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
+  container: {
+    flex: 1,
+    backgroundColor: "#242424",
+  },
+  containerHeader: {
+    marginTop: "14%",
+    marginBottom: "8%",
+    paddingStart: "5%",
+  },
+  message: {
+    fontSize: 50,
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  containerForm: {
+    backgroundColor: "#eeeeee",
+    flex: 1,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    padding: "5%",
+  },
+  formImage: {
+    width: 200,
+    height: 150,
+    alignSelf: "center",
+    marginBottom: 20,
+    opacity: 1,
+  },
+  title: {
+    fontSize: 22,
+    marginTop: 20,
+  },
+  input: {
+    borderBottomWidth: 1,
+    height: 40,
+    marginBottom: 12,
+    fontSize: 18,
+  },
+  button: {
+    backgroundColor: "#00796b",
+    width: "100%",
+    borderRadius: 6,
+    paddingVertical: 12,
+    marginTop: 20,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 20,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  registerToggle: {
+    color: "#1e90ff",
+    marginTop: 20,
+    fontSize: 20,
+    textAlign: "center",
+    textDecorationLine: "underline",
+  },
 });

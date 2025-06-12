@@ -13,6 +13,7 @@ import Detalhes from '../Screens/Detalhes';
 import Mapa from '../Screens/Mapa';
 import LoginScreen from '../Screens/LoginScreen';
 import SplashScreen from '../Screens/SplashScreen';
+import Logout from '../Screens/Logout';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -51,6 +52,9 @@ function BottomTabs() {
                         case 'Perfil':
                             iconName = focused ? 'person' : 'person-outline';
                             break;
+                        case 'Logout':
+                            iconName = focused ? 'log-out' : 'log-out-outline';
+                            break;
                         default:
                             iconName = 'alert-circle';
                     }
@@ -75,10 +79,10 @@ function BottomTabs() {
             <Tab.Screen name="Inicio" component={Inicio} />
             <Tab.Screen name="Mapa" component={Mapa} />
             <Tab.Screen name="Perfil" component={Perfil} />
+            <Tab.Screen name="Logout" component={Logout} />
         </Tab.Navigator>
     );
 }
-
 
 export default function Routes() {
     return (

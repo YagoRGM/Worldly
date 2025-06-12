@@ -19,7 +19,7 @@ export default function Visualizar({ navigation }) {
     const [latitude_lugar, setLatitude_Lugar] = useState('');
     const [longitude_lugar, setLongitude_lugar] = useState('');
     const [imagem_lugar, setImagem_lugar] = useState('');
-    const [imagem_local_file, setImagem_local_file] = useState(null); // Para upload
+    const [imagem_local_file, setImagem_local_file] = useState(null);
     const [modalVisible_editar, setModalVisible_editar] = useState(false);
     const [deleteAlertVisible, setDeleteAlertVisible] = useState(false);
     const [deleteid, setDeleteID] = useState(null);
@@ -60,6 +60,7 @@ export default function Visualizar({ navigation }) {
                     latitude: data.latitude,
                     longitude: data.longitude,
                     imagem: data.imagem || '',
+                    user_email: data.user_email || '',
                 }
             });
             setLugares(lugares);
@@ -71,13 +72,11 @@ export default function Visualizar({ navigation }) {
 
     const carregarFavoritos = async () => {
         try {
-            if (!user) {
-                // Se não estiver logado, tenta pegar do localStorage (AsyncStorage)
-                const localFav = await getLocalFavoritos();
-                setFavoritos(localFav);
+            if (!user || !user.email) {
+                setFavoritos([]);
                 return;
             }
-            const favRef = doc(db, 'favoritos', user.uid);
+            const favRef = doc(db, 'favoritos', user.email);
             const favSnap = await getDoc(favRef);
             if (favSnap.exists()) {
                 setFavoritos(favSnap.data().lugares || []);
@@ -89,24 +88,29 @@ export default function Visualizar({ navigation }) {
         }
     };
 
-    // Função para pegar favoritos locais (AsyncStorage)
-    const getLocalFavoritos = async () => {
+    const alternarFavorito = async (item) => {
         try {
-            const fav = await window?.localStorage?.getItem('favoritos') || '[]';
-            return JSON.parse(fav);
-        } catch {
-            return [];
+            if (!user || !user.email) {
+                alert('Faça login para favoritar.');
+                return;
+            }
+            let favoritosAtuais = favoritos || [];
+            let novosFavoritos = [];
+            if (favoritosAtuais.includes(item.id)) {
+                novosFavoritos = favoritosAtuais.filter(id => id !== item.id);
+            } else {
+                novosFavoritos = [...favoritosAtuais, item.id];
+            }
+            setFavoritos(novosFavoritos);
+
+            const favRef = doc(db, 'favoritos', user.email);
+            await setDoc(favRef, { lugares: novosFavoritos });
+        } catch (error) {
+            alert('Erro ao favoritar. Tente novamente.');
+            console.error('Erro ao favoritar:', error);
         }
     };
 
-    // Função para salvar favoritos locais (AsyncStorage)
-    const setLocalFavoritos = async (favArr) => {
-        try {
-            await window?.localStorage?.setItem('favoritos', JSON.stringify(favArr));
-        } catch {}
-    };
-
-    // Selecionar imagem da galeria e preparar para upload
     const escolherImagem = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -121,23 +125,15 @@ export default function Visualizar({ navigation }) {
         }
     };
 
-    // Função para upload da imagem no Supabase Storage
     const uploadImagemSupabase = async (file) => {
         if (!file) return null;
         try {
-            // Gera um nome único para o arquivo
             const fileExt = file.uri.split('.').pop();
             const fileName = `${Date.now()}_${Math.floor(Math.random() * 10000)}.${fileExt}`;
             const path = `imagens/${fileName}`;
 
-            let fileToUpload;
-            if (Platform.OS === 'web') {
-                const response = await fetch(file.uri);
-                fileToUpload = await response.blob();
-            } else {
-                const response = await fetch(file.uri);
-                fileToUpload = await response.blob();
-            }
+            const response = await fetch(file.uri);
+            const fileToUpload = await response.blob();
 
             const { error } = await supabase.storage.from('imagens').upload(path, fileToUpload, {
                 cacheControl: '3600',
@@ -150,7 +146,6 @@ export default function Visualizar({ navigation }) {
                 return null;
             }
 
-            // Retorna a URL pública da imagem
             const { data } = supabase.storage.from('imagens').getPublicUrl(path);
             return data.publicUrl;
         } catch (err) {
@@ -162,7 +157,6 @@ export default function Visualizar({ navigation }) {
     const editarLugar = async () => {
         try {
             let urlImagem = imagem_lugar;
-            // Se o usuário selecionou uma nova imagem, faz upload no Supabase
             if (imagem_local_file) {
                 const url = await uploadImagemSupabase(imagem_local_file);
                 if (url) urlImagem = url;
@@ -175,6 +169,7 @@ export default function Visualizar({ navigation }) {
                 latitude: latitude_lugar,
                 longitude: longitude_lugar,
                 imagem: urlImagem,
+                user_email: user?.email || '',
             });
 
             setLugares(prev =>
@@ -187,6 +182,7 @@ export default function Visualizar({ navigation }) {
                             latitude: latitude_lugar,
                             longitude: longitude_lugar,
                             imagem: urlImagem,
+                            user_email: user?.email || '',
                         }
                         : l
                 )
@@ -232,37 +228,13 @@ export default function Visualizar({ navigation }) {
         }
     };
 
-    // Favoritar/desfavoritar SEM exigir login
-    const alternarFavorito = async (item) => {
-        try {
-            let favoritosAtuais = favoritos || [];
-            let novosFavoritos = [];
-            if (favoritosAtuais.includes(item.id)) {
-                novosFavoritos = favoritosAtuais.filter(id => id !== item.id);
-            } else {
-                novosFavoritos = [...favoritosAtuais, item.id];
-            }
-            setFavoritos(novosFavoritos);
-
-            // Se o usuário estiver logado, salva no Firestore
-            if (user) {
-                const favRef = doc(db, 'favoritos', user.uid);
-                await setDoc(favRef, { lugares: novosFavoritos });
-            } else {
-                // Salva localmente (web: localStorage, mobile: AsyncStorage)
-                setLocalFavoritos(novosFavoritos);
-            }
-        } catch (error) {
-            alert('Erro ao favoritar. Tente novamente.');
-            console.error('Erro ao favoritar:', error);
-        }
-    };
-
-    // Mostra só os favoritos na aba Favoritos
+    // Mostra todos os lugares na aba "Todos", mas só permite editar/excluir se for o dono (pelo email).
+    // Na aba Favoritos, mostra só os lugares favoritados pelo usuário logado.
     const lugaresFiltrados = abaFavoritos
         ? lugares.filter(l => favoritos.includes(l.id))
         : lugares;
 
+    // Editar e Excluir aparecem para todos
     const renderItem = ({ item }) => (
         <View style={styles.card}>
             {item.imagem ? (
@@ -326,7 +298,7 @@ export default function Visualizar({ navigation }) {
                     <Text style={styles.abaTexto}>Favoritos</Text>
                 </TouchableOpacity>
             </View>
-            <Text style={styles.title_mapa}>{abaFavoritos ? "Meus Favoritos" : "Visualizar os lugares do mapa"}</Text>
+            <Text style={styles.title_mapa}>{abaFavoritos ? "Meus Favoritos" : "Todos os Lugares"}</Text>
             {loading ? (
                 <ActivityIndicator size="large" color="#FF6B00" style={{ marginTop: 40 }} />
             ) : (
