@@ -8,6 +8,8 @@ export default function SplashScreen({ navigation }) {
   const titleAnim = useRef(new Animated.Value(0)).current;
   const subtitleAnim = useRef(new Animated.Value(0)).current;
   const loadingAnim = useRef(new Animated.Value(0)).current;
+  const logoBounceAnim = useRef(new Animated.Value(0)).current;
+  const footerAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Sequência de animações
@@ -31,6 +33,12 @@ export default function SplashScreen({ navigation }) {
           useNativeDriver: true,
           easing: Easing.inOut(Easing.ease),
         }),
+        Animated.spring(logoBounceAnim, {
+          toValue: 1,
+          friction: 2,
+          tension: 60,
+          useNativeDriver: true,
+        }),
       ]),
       Animated.timing(titleAnim, {
         toValue: 1,
@@ -50,19 +58,31 @@ export default function SplashScreen({ navigation }) {
         useNativeDriver: true,
         easing: Easing.out(Easing.exp),
       }),
+      Animated.timing(footerAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.exp),
+      }),
     ]).start();
 
-    // Splash dura 10 segundos
+    // Splash dura 5 segundos
     const timer = setTimeout(() => {
       navigation.replace('Login');
-    }, 5000);
+    }, 10000);
     return () => clearTimeout(timer);
-  }, [navigation, fadeAnim, scaleAnim, rotateAnim, titleAnim, subtitleAnim, loadingAnim]);
+  }, [navigation, fadeAnim, scaleAnim, rotateAnim, titleAnim, subtitleAnim, loadingAnim, logoBounceAnim, footerAnim]);
 
   // Animação de rotação para a logo
   const rotateInterpolate = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
+  });
+
+  // Animação de bounce para a logo
+  const bounceInterpolate = logoBounceAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, -30, 0],
   });
 
   return (
@@ -76,6 +96,7 @@ export default function SplashScreen({ navigation }) {
             transform: [
               { scale: scaleAnim },
               { rotate: rotateInterpolate },
+              { translateY: bounceInterpolate },
             ],
           },
         ]}
@@ -91,6 +112,12 @@ export default function SplashScreen({ navigation }) {
                 translateY: subtitleAnim.interpolate({
                   inputRange: [0, 1],
                   outputRange: [30, 0],
+                }),
+              },
+              {
+                scale: subtitleAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.8, 1],
                 }),
               },
             ],
@@ -110,15 +137,36 @@ export default function SplashScreen({ navigation }) {
                 outputRange: [0.7, 1],
               }),
             },
+            {
+              translateY: loadingAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [30, 0],
+              }),
+            },
           ],
         }}
       >
         <ActivityIndicator size="large" color="#fff" />
         <Text style={styles.loadingText}>Carregando experiências incríveis...</Text>
       </Animated.View>
-      <View style={styles.footer}>
+      <Animated.View
+        style={[
+          styles.footer,
+          {
+            opacity: footerAnim,
+            transform: [
+              {
+                translateY: footerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [30, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <Text style={styles.footerText}>© {new Date().getFullYear()} Worldly</Text>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -131,10 +179,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 500,
     marginBottom: 18,
-    // Sem fundo, para PNG transparente
     backgroundColor: 'transparent',
   },
   title: {
@@ -170,6 +217,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 24,
     width: '100%',
+    height: 50,
     alignItems: 'center',
   },
   footerText: {

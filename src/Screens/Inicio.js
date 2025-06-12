@@ -513,8 +513,7 @@ const styles = StyleSheet.create({
   },
 });
 
-// Customização da barra de rolagem laranja para web
-if (Platform.OS === 'web') {
+if (Platform.OS === 'ios') {
   const style = document.createElement('style');
   style.innerHTML = `
     ::-webkit-scrollbar-thumb {

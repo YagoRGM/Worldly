@@ -36,16 +36,22 @@ export default function Visualizar({ navigation }) {
 
         const unsubscribeNav = navigation.addListener('focus', () => {
             carregarLugares();
-            carregarFavoritos();
         });
         carregarLugares();
-        carregarFavoritos();
 
         return () => {
             unsubscribeAuth();
             unsubscribeNav();
         };
     }, [navigation]);
+
+    useEffect(() => {
+        if (user) {
+            carregarFavoritos();
+        } else {
+            setFavoritos([]);
+        }
+    }, [user]);
 
     const carregarLugares = async () => {
         setLoading(true);
@@ -90,10 +96,7 @@ export default function Visualizar({ navigation }) {
 
     const alternarFavorito = async (item) => {
         try {
-            if (!user || !user.email) {
-                alert('Faça login para favoritar.');
-                return;
-            }
+            // Remova o if (!user || !user.email)
             let favoritosAtuais = favoritos || [];
             let novosFavoritos = [];
             if (favoritosAtuais.includes(item.id)) {
@@ -103,14 +106,16 @@ export default function Visualizar({ navigation }) {
             }
             setFavoritos(novosFavoritos);
 
-            const favRef = doc(db, 'favoritos', user.email);
-            await setDoc(favRef, { lugares: novosFavoritos });
+            // Só salva no Firestore se houver usuário
+            if (user && user.email) {
+                const favRef = doc(db, 'favoritos', user.email);
+                await setDoc(favRef, { lugares: novosFavoritos });
+            }
         } catch (error) {
-            alert('Erro ao favoritar. Tente novamente.');
             console.error('Erro ao favoritar:', error);
         }
     };
-
+    
     const escolherImagem = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -228,13 +233,10 @@ export default function Visualizar({ navigation }) {
         }
     };
 
-    // Mostra todos os lugares na aba "Todos", mas só permite editar/excluir se for o dono (pelo email).
-    // Na aba Favoritos, mostra só os lugares favoritados pelo usuário logado.
     const lugaresFiltrados = abaFavoritos
         ? lugares.filter(l => favoritos.includes(l.id))
         : lugares;
 
-    // Editar e Excluir aparecem para todos
     const renderItem = ({ item }) => (
         <View style={styles.card}>
             {item.imagem ? (
@@ -260,12 +262,18 @@ export default function Visualizar({ navigation }) {
                         <FontAwesome name="trash" size={20} color="white" />
                         <Text style={styles.buttonText}>Excluir</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => alternarFavorito(item)}>
+                    <TouchableOpacity
+                        onPress={() => alternarFavorito(item)}
+                        // Removido o disabled para garantir clique sempre
+                    >
                         <FontAwesome
                             name={favoritos.includes(item.id) ? "star" : "star-o"}
                             size={28}
                             color="#FFD700"
-                            style={{ marginLeft: 10 }}
+                            style={{
+                                marginLeft: 10,
+                                opacity: (!user || !user.email) ? 0.5 : 1
+                            }}
                         />
                     </TouchableOpacity>
                 </View>

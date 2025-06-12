@@ -67,9 +67,20 @@ export default function Perfil({ navigation }) {
                 ) : (
                     <Text style={styles.info}>Dados do usuário não encontrados.</Text>
                 )}
-
-                <Pressable style={styles.button} onPress={() => navigation.navigate('EditarPerfil')}>
+                <Pressable style={[styles.button, styles.buttonMargin]} onPress={() => navigation.navigate('EditarPerfil')}>
                     <Text style={styles.buttonText}>Editar Perfil</Text>
+                </Pressable>
+                <Pressable
+                    style={styles.button}
+                    onPress={async () => {
+                        await supabase.auth.signOut();
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Login' }],
+                        });
+                    }}
+                >
+                    <Text style={styles.buttonText}>Sair</Text>
                 </Pressable>
             </View>
         </ScrollView>
@@ -91,7 +102,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f5f6fa',
     },
     profileCard: {
-        width: '100%',
+        width: '95%',
         maxWidth: 380,
         backgroundColor: '#fff',
         borderRadius: 24,
@@ -139,7 +150,6 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     button: {
-        marginTop: 32,
         backgroundColor: '#FF6B00',
         paddingVertical: 14,
         paddingHorizontal: 40,
@@ -149,6 +159,12 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 6,
         elevation: 5,
+        width: '100%', 
+        alignItems: 'center', 
+    },
+    buttonMargin: {
+        marginTop: 32,
+        marginBottom: 16, 
     },
     buttonText: {
         color: '#fff',

@@ -48,7 +48,7 @@ export default function Mapa({ navigation, route }) {
       const querySnapshot = await getDocs(collection(db, 'pontosTuristicos'));
       const marcadoresFirestore = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data(), // Pegando todas as infos (ex: nome, descrição, imagem)
+        ...doc.data(),
       }));
       setMarcadores(marcadoresFirestore);
     } catch (error) {

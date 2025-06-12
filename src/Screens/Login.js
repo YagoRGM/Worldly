@@ -59,7 +59,6 @@ export default function LoginScreen({ navigation }) {
 
       if (error) throw error;
 
-      // Pega o nome do usuário do próprio Auth
       const nomeUsuario = data.user.user_metadata?.nome || data.user.email;
 
       Alert.alert("Bem-vindo", `Olá, ${nomeUsuario}!`);
@@ -143,13 +142,24 @@ export default function LoginScreen({ navigation }) {
               </TouchableOpacity>
             </Animatable.View>
 
-            <Animatable.View animation="slideInUp" delay={300} duration={800}>
-              <TouchableOpacity onPress={() => setIsRegistering(!isRegistering)}>
-                <Text style={styles.registerToggle}>
-                  {isRegistering ? "Voltar para o login" : "Criar uma conta"}
-                </Text>
-              </TouchableOpacity>
-            </Animatable.View>
+            {!isRegistering && (
+              <Animatable.View animation="slideInUp" delay={300} duration={800}>
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={() => setIsRegistering(true)}
+                >
+                  <Text style={styles.buttonText}>Criar uma conta</Text>
+                </TouchableOpacity>
+              </Animatable.View>
+            )}
+
+            {isRegistering && (
+              <Animatable.View animation="slideInUp" delay={300} duration={800}>
+                <TouchableOpacity onPress={() => setIsRegistering(false)}>
+                  <Text style={styles.registerToggle}>Voltar para o login</Text>
+                </TouchableOpacity>
+              </Animatable.View>
+            )}
           </Animatable.View>
         </View>
       </ScrollView>
@@ -197,9 +207,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   button: {
-    backgroundColor: "#00796b",
+    backgroundColor: "#FF6B00",
     width: "100%",
-    borderRadius: 6,
+    borderRadius: 30,
     paddingVertical: 12,
     marginTop: 20,
   },
@@ -210,10 +220,15 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   registerToggle: {
-    color: "#1e90ff",
+    backgroundColor: "#FF6B00",
+    width: "100%",
+    borderRadius: 30,
+    paddingVertical: 12,
     marginTop: 20,
+    color: "#fff",
     fontSize: 20,
     textAlign: "center",
-    textDecorationLine: "underline",
+    fontWeight: "bold",
+    marginBottom: 40,
   },
 });
