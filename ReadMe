@@ -3,13 +3,13 @@
 </h1>
 
 <p align="center">
-  <img src="https://github.com/YagoRGM/Worldly/blob/master/src/assets/img/1.png" width="300" alt="App Preview"/>
+  <img src="https://github.com/YagoRGM/Worldly/raw/master/src/assets/img/1.png" width="300" alt="App Preview"/>
 </p>
 
 ---
 
 ## ✨ Sobre o projeto  
-O **Worldly** é um aplicativo desenvolvido em React Native, que tem como objetivo facilitar a descoberta de pontos turísticos. Com ele, você pode visualizar locais no mapa, cadastrar novos pontos, obter informações e explorar sua cidade ou qualquer lugar do mundo.
+O **Worldly** é um aplicativo desenvolvido em React Native que tem como objetivo facilitar a descoberta de pontos turísticos. Com ele, você pode visualizar locais no mapa, cadastrar novos pontos, obter informações e explorar sua cidade ou qualquer lugar do mundo.
 
 ---
 
@@ -23,7 +23,7 @@ Facilitar o acesso às informações sobre pontos turísticos, promovendo experi
 - ➕ Cadastrar novos pontos diretamente no mapa  
 - 🔍 Ver detalhes dos locais cadastrados  
 - 🚶 Mostrar sua localização atual  
-- ❤️ Favoritar locais
+- ❤️ Favoritar locais  
 - 🔐 Login/Logout com autenticação Firebase  
 
 ---
@@ -31,7 +31,7 @@ Facilitar o acesso às informações sobre pontos turísticos, promovendo experi
 ## 🎨 Paleta de Cores  
 | Laranja Principal | Laranja Secundário | Laranja Escuro | Preto | Cinza | Branco |  
 | :--: | :--: | :--: | :--: | :--: | :--: |  
-| ![#EF853F](https://via.placeholder.com/15/EF853F/000000?text=+) `#EF853F` | ![#FF6600](https://via.placeholder.com/15/FF6600/000000?text=+) `#FF6600` | ![#B24700](https://via.placeholder.com/15/B24700/000000?text=+) `#B24700` | ![#000000](https://via.placeholder.com/15/000000/000000?text=+) `#000000` | ![#9F9F9F](https://via.placeholder.com/15/9F9F9F/000000?text=+) `#9F9F9F` | ![#FAFAFA](https://via.placeholder.com/15/FAFAFA/000000?text=+) `#FAFAFA` |  
+| `#EF853F` | `#FF6600` | `#B24700` | `#000000` | `#9F9F9F` | `#FAFAFA` |  
 
 ---
 
@@ -46,33 +46,35 @@ Facilitar o acesso às informações sobre pontos turísticos, promovendo experi
 
 ---
 
-## 🗺️ API de Mapas
-O React Native Maps é a biblioteca responsável por renderizar os mapas no aplicativo. Com ela, é possível integrar mapas interativos de alta performance, permitindo a visualização de pontos turísticos, localização do usuário em tempo real e a interação com marcadores no mapa.
-Além disso, a API oferece suporte para elementos como:
+## 🗺️ API de Mapas  
+O **React Native Maps** é a biblioteca responsável por renderizar os mapas no aplicativo. Com ela, é possível integrar mapas interativos de alta performance, permitindo a visualização de pontos turísticos, localização do usuário em tempo real e a interação com marcadores no mapa.
 
-1 - Markers (marcadores) com informações dos locais;
-2 - Circles (áreas destacadas) para representar zonas específicas no mapa;
-3 - Customização do mapa, ocultando elementos como transporte, comércios e rotas, para deixar o app mais limpo e focado na experiência do usuário.
+A API oferece suporte para:  
+- **Markers (marcadores)** com informações dos locais  
+- **Circles (áreas destacadas)** para representar zonas específicas no mapa  
+- **Customização do mapa**, ocultando elementos como transporte, comércios e rotas, para uma experiência mais limpa e focada  
 
-A utilização do React Native Maps, em conjunto com serviços de localização via Expo Location, permite uma experiência fluida e responsiva na navegação dos mapas dentro do app.
+A utilização do React Native Maps, junto do **Expo Location**, garante uma navegação fluida e precisa no mapa.
 
 ---
 
-## 🔑 Credenciais para teste  
+## 🔑 Credenciais para Teste  
 - **Email:** senai@gmail.com  
 - **Senha:** 123qwe  
 
 ---
 
 ## 🔗 Demonstração  
-<img src="https://github.com/YagoRGM/Worldly/blob/master/src/assets/img/4.png" width="600"/>  
+<p align="center">
+  <img src="https://github.com/YagoRGM/Worldly/raw/master/src/assets/img/4.png" width="600" alt="App Demo"/>
+</p>
 
 ---
 
 ## ⚙️ Como rodar o projeto  
 ```bash
 # Clone o projeto  
-git clone https://github.com/YagoRGM/Worldly 
+git clone https://github.com/YagoRGM/Worldly  
 
 # Acesse a pasta do projeto  
 cd worldly  
