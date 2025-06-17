@@ -137,6 +137,7 @@ export default function Home({ navigation }) {
         Pronto para sua próxima aventura? Explore o mapa ou compartilhe um lugar especial agora mesmo!
       </Text>
 
+    <Pressable onPress={() => navigation.navigate('Mapa')}>
       <ImageBackground
         source={require('../assets/img/4.png')}
         style={styles.heroImage}
@@ -147,6 +148,7 @@ export default function Home({ navigation }) {
           <Text style={styles.heroSubtitle}>Descubra lugares incríveis perto de você</Text>
         </View>
       </ImageBackground>
+    </Pressable>
 
       {/* Carrossel de imagens */}
       {carouselImages.length > 0 && (
@@ -226,7 +228,7 @@ export default function Home({ navigation }) {
             onPress={() => animateButton(scale1, 0.95, () => navigation.navigate('Visualizar'))}
           >
             <Ionicons name="location-outline" size={22} color="#fff" />
-            <Text style={styles.buttonText}>Locais Próximos</Text>
+            <Text style={styles.buttonText}>Visualizar Locais</Text>
           </Pressable>
         </Animated.View>
 

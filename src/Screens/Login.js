@@ -133,7 +133,7 @@ export default function LoginScreen({ navigation }) {
 
             <Animatable.View animation="slideInUp" duration={800}>
               <TouchableOpacity
-                style={styles.button}
+                style={styles.buttonAcessar}
                 onPress={isRegistering ? handleCadastro : handleLogin}
               >
                 <Text style={styles.buttonText}>
@@ -208,6 +208,13 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#FF6B00",
+    width: "100%",
+    borderRadius: 30,
+    paddingVertical: 12,
+    marginTop: 20,
+  },
+  buttonAcessar: {
+    backgroundColor: "#00796B",
     width: "100%",
     borderRadius: 30,
     paddingVertical: 12,

@@ -71,7 +71,7 @@ export default function Perfil({ navigation }) {
                     <Text style={styles.buttonText}>Editar Perfil</Text>
                 </Pressable>
                 <Pressable
-                    style={styles.button}
+                    style={styles.buttonLogout}
                     onPress={async () => {
                         await supabase.auth.signOut();
                         navigation.reset({
@@ -151,6 +151,19 @@ const styles = StyleSheet.create({
     },
     button: {
         backgroundColor: '#FF6B00',
+        paddingVertical: 14,
+        paddingHorizontal: 40,
+        borderRadius: 30,
+        shadowColor: '#FF6B00',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 5,
+        width: '100%', 
+        alignItems: 'center', 
+    },
+    buttonLogout: {
+        backgroundColor: 'red',
         paddingVertical: 14,
         paddingHorizontal: 40,
         borderRadius: 30,

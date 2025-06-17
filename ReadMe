@@ -1,0 +1,75 @@
+# Worldly
+
+Bem-vindo ao **Worldly**!  
+Este projeto é uma plataforma para explorar, compartilhar e favoritar lugares incríveis ao redor do mundo.
+
+---
+
+## Sobre a API
+
+A API do Worldly permite que usuários:
+
+- Usamos React Native Maps para conseguir rodar com qualidade
+- Cadastrem novos pontos turísticos e locais interessantes
+- Visualizem e filtrem lugares cadastrados pela comunidade
+- Marquem lugares como favoritos
+- Compartilhem fotos e descrições dos locais
+
+A comunicação entre o app e a API é feita de forma segura, garantindo a integridade dos dados dos usuários e dos lugares cadastrados.
+
+---
+
+## Autenticação
+
+Para acessar as funcionalidades do Worldly, é necessário realizar o login.  
+O sistema de autenticação garante que apenas usuários cadastrados possam adicionar, editar ou favoritar lugares.
+
+- **Login:** O usuário pode criar uma conta ou acessar com suas credenciais.
+- **Proteção:** Algumas ações, como favoritar ou cadastrar locais, só estão disponíveis para usuários autenticados.
+
+**email: senai@gmail.com**
+**senha: 123qwe**
+
+---
+
+## Bancos de Dados Utilizados
+
+O projeto utiliza duas soluções modernas de backend:
+
+### Supabase
+
+- Armazenamento de imagens dos lugares
+- Autenticação de usuários (em algumas versões)
+- API RESTful para algumas operações
+
+### Firebase
+
+- Firestore para armazenamento dos dados dos lugares e favoritos
+- Sincronização em tempo real dos dados cadastrados
+- Gerenciamento de permissões e segurança
+
+---
+
+## Paleta de Cores
+
+Paleta de Cores
+#EF853F
+#FF6600
+#B24700
+#000000
+#242424
+#9F9F9F
+#FAFAFA
+---
+
+## Como rodar o projeto
+
+1. Instale as dependências com `npm install` ou `yarn`
+2. Configure as chaves do Firebase e Supabase em `/Config`
+3. Rode o app com `expo start` ou `npm start`
+
+---
+
+## Contribuição
+
+Sinta-se à vontade para contribuir com sugestões, melhorias ou
