@@ -1,11 +1,15 @@
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Alert } from 'react-native';
 import { supabase } from '../Config/SupaBaseConfig';
 
 export default function Logout({ navigation }) {
   useEffect(() => {
     const doLogout = async () => {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        Alert.alert('Erro ao sair', error.message);
+        return;
+      }
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' }],

@@ -32,7 +32,7 @@ export default function LoginScreen({ navigation }) {
 
       if (error) throw error;
 
-      Alert.alert("Sucesso", "Usuário cadastrado com sucesso! Verifique seu e-mail para ativar a conta.");
+      Alert.alert("Sucesso", "Usuário cadastrado com sucesso!");
 
       setIsRegistering(false);
       setEmail("");
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderBottomWidth: 1,
-    height: 40,
+    height: 50,
     marginBottom: 12,
     fontSize: 18,
   },

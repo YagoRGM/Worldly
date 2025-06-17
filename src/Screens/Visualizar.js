@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, FlatList, ActivityIndicator, Image, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, FlatList, ActivityIndicator, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import app from '../Config/FireBaseConfig';
 import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
-import AwesomeAlert from 'react-native-awesome-alerts';
 import { useFonts, Poppins_400Regular, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { FontAwesome } from '@expo/vector-icons';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { supabase } from '../Config/SupaBaseConfig';
 
 const db = getFirestore(app);
-const auth = getAuth(app);
 
 export default function Visualizar({ navigation }) {
     const [lugares, setLugares] = useState([]);
@@ -30,28 +27,28 @@ export default function Visualizar({ navigation }) {
     const [user, setUser] = useState(null);
 
     useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
-            setUser(firebaseUser);
-        });
+        const getUserAndData = async () => {
+            const { data } = await supabase.auth.getUser();
+            setUser(data.user);
+
+            if (data.user && data.user.id) {
+                await carregarFavoritos(data.user.id);
+            } else {
+                setFavoritos([]);
+            }
+            await carregarLugares();
+        };
 
         const unsubscribeNav = navigation.addListener('focus', () => {
-            carregarLugares();
+            getUserAndData();
         });
-        carregarLugares();
+
+        getUserAndData();
 
         return () => {
-            unsubscribeAuth();
             unsubscribeNav();
         };
     }, [navigation]);
-
-    useEffect(() => {
-        if (user) {
-            carregarFavoritos();
-        } else {
-            setFavoritos([]);
-        }
-    }, [user]);
 
     const carregarLugares = async () => {
         setLoading(true);
@@ -76,13 +73,13 @@ export default function Visualizar({ navigation }) {
         setLoading(false);
     };
 
-    const carregarFavoritos = async () => {
+    const carregarFavoritos = async (userId) => {
         try {
-            if (!user || !user.email) {
+            if (!userId) {
                 setFavoritos([]);
                 return;
             }
-            const favRef = doc(db, 'favoritos', user.email);
+            const favRef = doc(db, 'favoritos', userId);
             const favSnap = await getDoc(favRef);
             if (favSnap.exists()) {
                 setFavoritos(favSnap.data().lugares || []);
@@ -95,27 +92,32 @@ export default function Visualizar({ navigation }) {
     };
 
     const alternarFavorito = async (item) => {
+        if (!user || !user.id) {
+            alert('Faça login para favoritar.');
+            return;
+        }
         try {
-            // Remova o if (!user || !user.email)
-            let favoritosAtuais = favoritos || [];
+            const favRef = doc(db, 'favoritos', user.id);
+            const favSnap = await getDoc(favRef);
+            let favoritosAtuais = [];
+            if (favSnap.exists()) {
+                favoritosAtuais = favSnap.data().lugares || [];
+            }
             let novosFavoritos = [];
             if (favoritosAtuais.includes(item.id)) {
                 novosFavoritos = favoritosAtuais.filter(id => id !== item.id);
             } else {
                 novosFavoritos = [...favoritosAtuais, item.id];
             }
+            await setDoc(favRef, { lugares: novosFavoritos });
             setFavoritos(novosFavoritos);
-
-            // Só salva no Firestore se houver usuário
-            if (user && user.email) {
-                const favRef = doc(db, 'favoritos', user.email);
-                await setDoc(favRef, { lugares: novosFavoritos });
-            }
+            console.log('Favoritos salvos:', novosFavoritos);
         } catch (error) {
+            alert('Erro ao favoritar. Tente novamente.');
             console.error('Erro ao favoritar:', error);
         }
     };
-    
+
     const escolherImagem = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -130,43 +132,9 @@ export default function Visualizar({ navigation }) {
         }
     };
 
-    const uploadImagemSupabase = async (file) => {
-        if (!file) return null;
-        try {
-            const fileExt = file.uri.split('.').pop();
-            const fileName = `${Date.now()}_${Math.floor(Math.random() * 10000)}.${fileExt}`;
-            const path = `imagens/${fileName}`;
-
-            const response = await fetch(file.uri);
-            const fileToUpload = await response.blob();
-
-            const { error } = await supabase.storage.from('imagens').upload(path, fileToUpload, {
-                cacheControl: '3600',
-                upsert: false,
-                contentType: file.type || 'image/jpeg',
-            });
-
-            if (error) {
-                console.error('Erro ao subir imagem no Supabase:', error);
-                return null;
-            }
-
-            const { data } = supabase.storage.from('imagens').getPublicUrl(path);
-            return data.publicUrl;
-        } catch (err) {
-            console.error('Erro upload imagem:', err);
-            return null;
-        }
-    };
-
     const editarLugar = async () => {
         try {
             let urlImagem = imagem_lugar;
-            if (imagem_local_file) {
-                const url = await uploadImagemSupabase(imagem_local_file);
-                if (url) urlImagem = url;
-            }
-
             const lugarRef = doc(db, 'pontosTuristicos', lugarSelecionado.id);
             await updateDoc(lugarRef, {
                 nome: nome_lugar,
@@ -227,7 +195,9 @@ export default function Visualizar({ navigation }) {
             await deleteDoc(doc(db, 'pontosTuristicos', deleteid));
             setDeleteAlertVisible(false);
             carregarLugares();
-            carregarFavoritos();
+            if (user && user.id) {
+                carregarFavoritos(user.id);
+            }
         } catch (error) {
             console.error('Error ao excluir Localidade', error);
         }
@@ -262,18 +232,12 @@ export default function Visualizar({ navigation }) {
                         <FontAwesome name="trash" size={20} color="white" />
                         <Text style={styles.buttonText}>Excluir</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => alternarFavorito(item)}
-                        // Removido o disabled para garantir clique sempre
-                    >
+                    <TouchableOpacity onPress={() => alternarFavorito(item)}>
                         <FontAwesome
                             name={favoritos.includes(item.id) ? "star" : "star-o"}
                             size={28}
                             color="#FFD700"
-                            style={{
-                                marginLeft: 10,
-                                opacity: (!user || !user.email) ? 0.5 : 1
-                            }}
+                            style={{ marginLeft: 10 }}
                         />
                     </TouchableOpacity>
                 </View>
@@ -378,72 +342,30 @@ export default function Visualizar({ navigation }) {
                 </View>
             </Modal>
 
-            <AwesomeAlert
-                show={deleteAlertVisible}
-                title="Excluir Localização"
-                titleStyle={{
-                    fontFamily: 'Poppins-Bold',
-                    fontSize: 24,
-                    textAlign: 'center',
-                    color: '#333',
-                    marginBottom: 10,
-                }}
-                message="Você tem certeza que deseja excluir essa localização?"
-                messageStyle={{
-                    fontFamily: 'Poppins-Regular',
-                    fontSize: 16,
-                    textAlign: 'center',
-                    color: '#555',
-                }}
-                closeOnTouchOutside={true}
-                closeOnHardwareBackPress={true}
-                showCancelButton={true}
-                cancelText="Cancelar"
-                cancelButtonStyle={{
-                    paddingHorizontal: 20,
-                    paddingVertical: 10,
-                    borderRadius: 25,
-                    backgroundColor: '#FF3B30',
-                    borderWidth: 1,
-                    borderColor: '#FFF',
-                    marginHorizontal: 10,
-                }}
-                cancelButtonTextStyle={{
-                    fontFamily: 'Poppins-Regular',
-                    fontSize: 16,
-                    color: '#FFF',
-                }}
-                showConfirmButton={true}
-                confirmText="Excluir"
-                confirmButtonStyle={{
-                    paddingHorizontal: 20,
-                    paddingVertical: 10,
-                    borderRadius: 25,
-                    backgroundColor: '#FF6B00',
-                    borderWidth: 1,
-                    borderColor: '#FFF',
-                    marginHorizontal: 10,
-                }}
-                confirmButtonTextStyle={{
-                    fontFamily: 'Poppins-Regular',
-                    fontSize: 16,
-                    color: '#FFF',
-                }}
-                contentContainerStyle={{
-                    backgroundColor: '#fff',
-                    borderRadius: 15,
-                    padding: 25,
-                    elevation: 5,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 5,
-                }}
-                onCancelPressed={() => {
-                    setDeleteAlertVisible(false);
-                }}
-                onConfirmPressed={excluirlocalidade}
-            />
+            {/* Modal de confirmação de exclusão */}
+            <Modal
+                visible={deleteAlertVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setDeleteAlertVisible(false)}
+            >
+                <View style={styles.modalcontainer}>
+                    <View style={styles.modal}>
+                        <Text style={styles.modalTitulo}>Excluir Localização</Text>
+                        <Text style={{ textAlign: 'center', marginBottom: 20 }}>
+                            Você tem certeza que deseja excluir essa localização?
+                        </Text>
+                        <View style={styles.modalBotoes}>
+                            <TouchableOpacity style={styles.botaoCancelar} onPress={() => setDeleteAlertVisible(false)}>
+                                <Text style={styles.botaoTexto}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.botaoSalvar} onPress={excluirlocalidade}>
+                                <Text style={styles.botaoTexto}>Excluir</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -467,7 +389,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         marginBottom: 30,
         alignSelf: 'center',
-        width: '90%',
+        width: '97%',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
