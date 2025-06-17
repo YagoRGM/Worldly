@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import { View, TextInput, StyleSheet, Alert, Text, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Image, Linking } from 'react-native';
 import { db } from '../Config/FireBaseConfig';
 import { collection, addDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
@@ -52,65 +52,75 @@ export default function CadastrarLugares() {
   };
 
   return (
-  <KeyboardAvoidingView
-    style={{ flex: 1, backgroundColor: '#F5F5F5' }}
-    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-  >
-    <ScrollView contentContainerStyle={styles.outerContainer} keyboardShouldPersistTaps="handled">
-      <View style={styles.box}>
-        <Text style={styles.titulo}>Cadastrar Ponto Turístico</Text>
-        <Text style={styles.subtitulo}>
-          Preencha os dados do ponto turístico que merece ser compartilhado!
-        </Text>
-        <TextInput
-          placeholder="Nome do Ponto Turístico"
-          style={styles.input}
-          value={nome}
-          onChangeText={setNome}
-          placeholderTextColor="#"
-        />
-        <TextInput
-          placeholder="Descrição"
-          style={[styles.input, { height: 80 }]}
-          value={descricao}
-          onChangeText={setDescricao}
-          multiline
-          placeholderTextColor="#"
-        />
-        <View style={styles.row}>
-          <TextInput
-            placeholder="Latitude"
-            style={[styles.input, styles.inputHalf]}
-            keyboardType="numeric"
-            value={latitude}
-            onChangeText={setLatitude}
-            placeholderTextColor="#"
-          />
-          <TextInput
-            placeholder="Longitude"
-            style={[styles.input, styles.inputHalf]}
-            keyboardType="numeric"
-            value={longitude}
-            onChangeText={setLongitude}
-            placeholderTextColor="#"
-          />
-        </View>
-        <TouchableOpacity style={[styles.input, styles.imagemPicker]} onPress={escolherImagem}>
-          <FontAwesome name="image" size={20} color="#ff6b00" />
-          <Text style={{ marginLeft: 10, color: '#ff6b00', fontFamily: 'Poppins-Regular' }}>
-            {imagem ? 'Trocar Imagem' : 'Selecionar Imagem'}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: '#F5F5F5' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={styles.outerContainer} keyboardShouldPersistTaps="handled">
+        <View style={styles.box}>
+          <Text style={styles.titulo}>Cadastrar Ponto Turístico</Text>
+          <Text style={styles.subtitulo}>
+            Preencha os dados do ponto turístico que merece ser compartilhado!
           </Text>
-        </TouchableOpacity>
-        {imagem ? (
-          <Image source={{ uri: imagem }} style={styles.imagemPreview} />
-        ) : null}
-        <TouchableOpacity style={styles.botao} onPress={cadastrarLugar}>
-          <Text style={styles.botaoTexto}>Cadastrar Ponto Turístico</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  </KeyboardAvoidingView>
-);
+          <TextInput
+            placeholder="Nome do Ponto Turístico"
+            style={styles.input}
+            value={nome}
+            onChangeText={setNome}
+            placeholderTextColor="#"
+          />
+          <TextInput
+            placeholder="Descrição"
+            style={[styles.input, { height: 80 }]}
+            value={descricao}
+            onChangeText={setDescricao}
+            multiline
+            placeholderTextColor="#"
+          />
+          <View style={styles.row}>
+            <TextInput
+              placeholder="Latitude"
+              style={[styles.input, styles.inputHalf]}
+              keyboardType="numeric"
+              value={latitude}
+              onChangeText={setLatitude}
+              placeholderTextColor="#"
+            />
+            <TextInput
+              placeholder="Longitude"
+              style={[styles.input, styles.inputHalf]}
+              keyboardType="numeric"
+              value={longitude}
+              onChangeText={setLongitude}
+              placeholderTextColor="#"
+            />
+          </View>
+
+          <TouchableOpacity
+            onPress={() => Linking.openURL('https://maps.google.com')}
+            style={{ marginBottom: 10, alignSelf: 'flex-start' }}
+          >
+            <Text style={{ color: '#00796B', textDecorationLine: 'underline', fontSize: 13 }}>
+               Não sabe a localização exata? Abra no Google Maps
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.input, styles.imagemPicker]} onPress={escolherImagem}>
+            <FontAwesome name="image" size={20} color="#ff6b00" />
+            <Text style={{ marginLeft: 10, color: '#ff6b00', fontFamily: 'Poppins-Regular' }}>
+              {imagem ? 'Trocar Imagem' : 'Selecionar Imagem'}
+            </Text>
+          </TouchableOpacity>
+          {imagem ? (
+            <Image source={{ uri: imagem }} style={styles.imagemPreview} />
+          ) : null}
+          <TouchableOpacity style={styles.botao} onPress={cadastrarLugar}>
+            <Text style={styles.botaoTexto}>Cadastrar Ponto Turístico</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -169,7 +179,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
     justifyContent: 'space-between',
-    marginBottom: 16,
   },
   inputHalf: {
     width: '48%',

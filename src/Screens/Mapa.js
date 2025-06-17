@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { GoogleMap, LoadScript, Marker, Circle } from '@react-google-maps/api';
-import { GOOGLE_MAPS_API_KEY } from '../Config/MapsConfig';
+import MapView, { Marker, Circle } from 'react-native-maps';
 import { db } from '../Config/FireBaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
 import * as Location from 'expo-location';
@@ -11,11 +10,12 @@ import { useRoute } from '@react-navigation/native';
 const containerStyle = {
   width: '100%',
   height: '100%',
+  flex: 1,
 };
 
 const center = {
-  lat: -23.55052,
-  lng: -46.633308,
+  latitude: -23.55052,
+  longitude: -46.633308,
 };
 
 const mapOptions = {
@@ -48,7 +48,9 @@ export default function Mapa({ navigation, route }) {
       const querySnapshot = await getDocs(collection(db, 'pontosTuristicos'));
       const marcadoresFirestore = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data(),
+        ...doc.data(), // Pegando todas as infos (ex: nome, descrição, imagem)
+        latitude: Number(doc.data().latitude),
+        longitude: Number(doc.data().longitude),
       }));
       setMarcadores(marcadoresFirestore);
     } catch (error) {
@@ -88,8 +90,8 @@ export default function Mapa({ navigation, route }) {
 
       let location = await Location.getCurrentPositionAsync({});
       setLocalizacaoAtual({
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
       });
     })();
   }, []);
@@ -97,78 +99,71 @@ export default function Mapa({ navigation, route }) {
   useEffect(() => {
     if (route.params?.latitude && route.params?.longitude) {
       setLocalizacaoAtual_marcador({
-        lat: route.params.latitude,
-        lng: route.params.longitude,
+        latitude: route.params.latitude,
+        longitude: route.params.longitude,
       });
     }
   }, [route.params]);
 
   return (
     <View style={{ flex: 1 }}>
-      <LoadScript googleMapsApiKey={GOOGLE_MAPS_API_KEY}>
-        <GoogleMap
-          mapContainerStyle={containerStyle}
-          center={localizacaoAtual_marcador || localizacaoAtual}
-          zoom={17}
-          options={mapOptions}
-        >
-
-          {marcadores.map((marcador, index) => (
-            <Marker
-              key={index}
-              position={{
-                lat: marcador.latitude,
-                lng: marcador.longitude,
-              }}
-              onClick={() => abrirModal(marcador)}
-
+      <MapView
+        style={containerStyle}
+        initialRegion={{
+          latitude: (localizacaoAtual_marcador || localizacaoAtual || center).latitude,
+          longitude: (localizacaoAtual_marcador || localizacaoAtual || center).longitude,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
+        }}
+        region={
+          (localizacaoAtual_marcador || localizacaoAtual) && {
+            latitude: (localizacaoAtual_marcador || localizacaoAtual).latitude,
+            longitude: (localizacaoAtual_marcador || localizacaoAtual).longitude,
+            latitudeDelta: 0.005,
+            longitudeDelta: 0.005,
+          }
+        }
+        customMapStyle={mapOptions.styles}
+        showsUserLocation={!!localizacaoAtual}
+      >
+        {marcadores.map((marcador, index) => (
+          <Marker
+            key={index}
+            coordinate={{
+              latitude: marcador.latitude,
+              longitude: marcador.longitude,
+            }}
+            onPress={() => abrirModal(marcador)}
+          />
+        ))}
+        {localizacaoAtual && (
+          <>
+            <Circle
+              center={localizacaoAtual}
+              radius={50}
+              strokeColor="#4285F4"
+              strokeWidth={2}
+              fillColor="rgba(66,133,244,0.35)"
             />
-          ))}
-          {localizacaoAtual && (
-            <>
-              <Circle
-                center={localizacaoAtual}
-                radius={50}
-                options={{
-                  strokeColor: '#4285F4',
-                  strokeOpacity: 0.8,
-                  strokeWeight: 2,
-                  fillColor: '#4285F4',
-                  fillOpacity: 0.35,
-                }}
-              />
-              {localizacaoAtual && (
-                <>
-                  <Circle
-                    center={localizacaoAtual}
-                    radius={20} // raio em metros
-                    options={{
-                      strokeColor: '#4285F4',
-                      strokeOpacity: 0.8,
-                      strokeWeight: 2,
-                      fillColor: '#4285F4',
-                      fillOpacity: 0.35,
-                    }}
-                  />
-                </>
-              )}
-              <Marker
-                position={localizacaoAtual}
-                icon={{
-                  url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-                  scaledSize: new window.google.maps.Size(40, 40),
-                }}
-              />
-            </>
-          )}
+            <Circle
+              center={localizacaoAtual}
+              radius={20}
+              strokeColor="#4285F4"
+              strokeWidth={2}
+              fillColor="rgba(66,133,244,0.35)"
+            />
+            <Marker
+              coordinate={localizacaoAtual}
+              pinColor="blue"
+            />
+          </>
+        )}
+      </MapView>
 
-          <TouchableOpacity style={styles.botaoCadastrar} onPress={() => navigation.navigate('Cadastrar Lugares')}>
-            <Text style={styles.simboloMais}>+</Text>
-            <Text style={styles.textoBotaoCadastrar}> Cadastrar Lugar</Text>
-          </TouchableOpacity>
-
-        </GoogleMap>
-      </LoadScript>
+      <TouchableOpacity style={styles.botaoCadastrar} onPress={() => navigation.navigate('Cadastrar Lugares')}>
+        <Text style={styles.simboloMais}>+</Text>
+        <Text style={styles.textoBotaoCadastrar}> Cadastrar Lugar</Text>
+      </TouchableOpacity>
 
 
       {/* Bottom Modal */}
