@@ -1,75 +1,84 @@
-# Worldly
+<h1 align="center">
+  🌍 <strong>Worldly</strong>  
+</h1>
 
-Bem-vindo ao **Worldly**!  
-Este projeto é uma plataforma para explorar, compartilhar e favoritar lugares incríveis ao redor do mundo.
-
----
-
-## Sobre a API
-
-A API do Worldly permite que usuários:
-
-- Usamos React Native Maps para conseguir rodar com qualidade
-- Cadastrem novos pontos turísticos e locais interessantes
-- Visualizem e filtrem lugares cadastrados pela comunidade
-- Marquem lugares como favoritos
-- Compartilhem fotos e descrições dos locais
-
-A comunicação entre o app e a API é feita de forma segura, garantindo a integridade dos dados dos usuários e dos lugares cadastrados.
+<p align="center">
+  <img src="https://github.com/YagoRGM/Worldly/blob/master/src/assets/img/1.png" width="300" alt="App Preview"/>
+</p>
 
 ---
 
-## Autenticação
-
-Para acessar as funcionalidades do Worldly, é necessário realizar o login.  
-O sistema de autenticação garante que apenas usuários cadastrados possam adicionar, editar ou favoritar lugares.
-
-- **Login:** O usuário pode criar uma conta ou acessar com suas credenciais.
-- **Proteção:** Algumas ações, como favoritar ou cadastrar locais, só estão disponíveis para usuários autenticados.
-
-**email: senai@gmail.com**
-**senha: 123qwe**
+## ✨ Sobre o projeto  
+O **Worldly** é um aplicativo desenvolvido em React Native, que tem como objetivo facilitar a descoberta de pontos turísticos. Com ele, você pode visualizar locais no mapa, cadastrar novos pontos, obter informações e explorar sua cidade ou qualquer lugar do mundo.
 
 ---
 
-## Bancos de Dados Utilizados
-
-O projeto utiliza duas soluções modernas de backend:
-
-### Supabase
-
-- Armazenamento de imagens dos lugares
-- Autenticação de usuários (em algumas versões)
-- API RESTful para algumas operações
-
-### Firebase
-
-- Firestore para armazenamento dos dados dos lugares e favoritos
-- Sincronização em tempo real dos dados cadastrados
-- Gerenciamento de permissões e segurança
+## 🎯 Objetivo  
+Facilitar o acesso às informações sobre pontos turísticos, promovendo experiências mais ricas e conectando pessoas aos melhores lugares.
 
 ---
 
-## Paleta de Cores
-
-Paleta de Cores
-#EF853F
-#FF6600
-#B24700
-#000000
-#242424
-#9F9F9F
-#FAFAFA
----
-
-## Como rodar o projeto
-
-1. Instale as dependências com `npm install` ou `yarn`
-2. Configure as chaves do Firebase e Supabase em `/Config`
-3. Rode o app com `expo start` ou `npm start`
+## 🚀 Funcionalidades  
+- 📍 Visualizar pontos turísticos no mapa  
+- ➕ Cadastrar novos pontos diretamente no mapa  
+- 🔍 Ver detalhes dos locais cadastrados  
+- 🚶 Mostrar sua localização atual  
+- ❤️ Favoritar locais
+- 🔐 Login/Logout com autenticação Firebase  
 
 ---
 
-## Contribuição
+## 🎨 Paleta de Cores  
+| Laranja Principal | Laranja Secundário | Laranja Escuro | Preto | Cinza | Branco |  
+| :--: | :--: | :--: | :--: | :--: | :--: |  
+| ![#EF853F](https://via.placeholder.com/15/EF853F/000000?text=+) `#EF853F` | ![#FF6600](https://via.placeholder.com/15/FF6600/000000?text=+) `#FF6600` | ![#B24700](https://via.placeholder.com/15/B24700/000000?text=+) `#B24700` | ![#000000](https://via.placeholder.com/15/000000/000000?text=+) `#000000` | ![#9F9F9F](https://via.placeholder.com/15/9F9F9F/000000?text=+) `#9F9F9F` | ![#FAFAFA](https://via.placeholder.com/15/FAFAFA/000000?text=+) `#FAFAFA` |  
 
-Sinta-se à vontade para contribuir com sugestões, melhorias ou
+---
+
+## 🛠️ Tecnologias Utilizadas  
+- ⚛️ React Native + Expo  
+- 🗺️ React Native Maps  
+- 🔥 Firebase (Auth + Firestore)  
+- 🗄️ Supabase (armazenamento de imagens)  
+- 📍 Expo Location  
+- 🖼️ Expo Image Picker  
+- 📦 Async Storage  
+
+---
+
+## 🗺️ API de Mapas
+O React Native Maps é a biblioteca responsável por renderizar os mapas no aplicativo. Com ela, é possível integrar mapas interativos de alta performance, permitindo a visualização de pontos turísticos, localização do usuário em tempo real e a interação com marcadores no mapa.
+Além disso, a API oferece suporte para elementos como:
+
+1 - Markers (marcadores) com informações dos locais;
+2 - Circles (áreas destacadas) para representar zonas específicas no mapa;
+3 - Customização do mapa, ocultando elementos como transporte, comércios e rotas, para deixar o app mais limpo e focado na experiência do usuário.
+
+A utilização do React Native Maps, em conjunto com serviços de localização via Expo Location, permite uma experiência fluida e responsiva na navegação dos mapas dentro do app.
+
+---
+
+## 🔑 Credenciais para teste  
+- **Email:** senai@gmail.com  
+- **Senha:** 123qwe  
+
+---
+
+## 🔗 Demonstração  
+<img src="https://github.com/YagoRGM/Worldly/blob/master/src/assets/img/4.png" width="600"/>  
+
+---
+
+## ⚙️ Como rodar o projeto  
+```bash
+# Clone o projeto  
+git clone https://github.com/YagoRGM/Worldly 
+
+# Acesse a pasta do projeto  
+cd worldly  
+
+# Instale as dependências  
+npm install  
+
+# Rode o app  
+npx expo start  
